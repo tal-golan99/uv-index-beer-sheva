@@ -14,13 +14,24 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data, error } = await getAdmin()
+  const admin = getAdmin();
+  const meta = user.user_metadata ?? {};
+
+  // Upsert so a missing profile row is created on first access
+  const { data, error } = await admin
     .from("profiles")
-    .select("*")
-    .eq("id", user.id)
+    .upsert({
+      id: user.id,
+      display_name: meta.full_name ?? meta.name ?? null,
+      avatar_url: meta.avatar_url ?? meta.picture ?? null,
+    }, { onConflict: "id", ignoreDuplicates: true })
+    .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[profile GET] upsert error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json(data);
 }
 
