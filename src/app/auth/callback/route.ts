@@ -19,19 +19,27 @@ export async function GET(request: Request) {
 
       const { data: profile } = await admin
         .from("profiles")
-        .select("id, onboarding_completed")
+        .select("id, onboarding_completed, avatar_url")
         .eq("id", data.user.id)
         .single();
 
+      const meta = data.user.user_metadata ?? {};
+
       if (!profile) {
-        // New user — seed profile with Google metadata
-        const meta = data.user.user_metadata ?? {};
         await admin.from("profiles").insert({
           id: data.user.id,
           display_name: meta.full_name ?? meta.name ?? null,
           avatar_url: meta.avatar_url ?? meta.picture ?? null,
         });
         return NextResponse.redirect(`${origin}/onboarding`);
+      }
+
+      // Sync Google avatar for existing users who don't have one
+      if (!profile.avatar_url) {
+        const googleAvatar = meta.avatar_url ?? meta.picture ?? null;
+        if (googleAvatar) {
+          await admin.from("profiles").update({ avatar_url: googleAvatar }).eq("id", data.user.id);
+        }
       }
 
       if (!profile.onboarding_completed) {

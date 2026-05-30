@@ -37,9 +37,9 @@ export default function AccountPage() {
   const [error, setError] = useState("");
 
   const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
   const [phoneNotif, setPhoneNotif] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [googleAvatar, setGoogleAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,7 +51,9 @@ export default function AccountPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.replace("/register");
+      if (!user) { router.replace("/register"); return; }
+      const meta = user.user_metadata ?? {};
+      setGoogleAvatar(meta.avatar_url ?? meta.picture ?? null);
     });
 
     fetch("/api/profile")
@@ -59,7 +61,6 @@ export default function AccountPage() {
       .then((data: Profile) => {
         setProfile(data);
         setDisplayName(data.display_name ?? "");
-        setPhone(data.phone ?? "");
         setPhoneNotif(data.phone_notifications);
         setTelegramConnected(!!data.telegram_chat_id);
         setLoading(false);
@@ -138,7 +139,6 @@ export default function AccountPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           display_name: displayName || null,
-          phone: phone || null,
           phone_notifications: phoneNotif,
           avatar_url: avatarUrl,
         }),
@@ -174,7 +174,7 @@ export default function AccountPage() {
     );
   }
 
-  const currentAvatar = avatarPreview ?? profile?.avatar_url;
+  const currentAvatar = avatarPreview ?? profile?.avatar_url ?? googleAvatar;
 
   return (
     <main className="min-h-screen px-4 py-8">
@@ -223,17 +223,6 @@ export default function AccountPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className={inputClass}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-[color:var(--color-ink-2)]">מספר טלפון</label>
-              <input
-                type="tel"
-                placeholder="+972501234567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className={inputClass}
-                dir="ltr"
               />
             </div>
           </div>

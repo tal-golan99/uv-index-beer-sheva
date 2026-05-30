@@ -4,15 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
-type Step = "phone" | "telegram" | "photo" | "saving";
-
-const inputClass =
-  "w-full rounded-xl bg-white px-4 py-3 text-base text-[color:var(--color-ink)] placeholder-[color:var(--color-ink-3)] ring-1 ring-[color:var(--color-pool-200)] outline-none transition-all focus:ring-2 focus:ring-[color:var(--color-pool-400)]";
+type Step = "telegram" | "photo" | "saving";
 
 function ProgressDots({ current }: { current: number }) {
   return (
     <div className="flex justify-center gap-2">
-      {[0, 1, 2].map((i) => (
+      {[0, 1].map((i) => (
         <span
           key={i}
           className={`rounded-full transition-all ${
@@ -30,8 +27,7 @@ export default function OnboardingPage() {
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const router = useRouter();
 
-  const [step, setStep] = useState<Step>("phone");
-  const [phone, setPhone] = useState("");
+  const [step, setStep] = useState<Step>("telegram");
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -54,7 +50,7 @@ export default function OnboardingPage() {
     });
   }, [supabase, router]);
 
-  // Generate Telegram link when entering telegram step
+  // Generate Telegram link on mount and start polling
   useEffect(() => {
     if (step !== "telegram") {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -69,7 +65,6 @@ export default function OnboardingPage() {
         }
       });
 
-    // Poll every 2s for connection
     pollRef.current = setInterval(async () => {
       const res = await fetch("/api/telegram/status");
       const { connected } = await res.json();
@@ -88,14 +83,6 @@ export default function OnboardingPage() {
     if (!file) return;
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
-  }
-
-  function advanceFromPhone() {
-    if (phone) {
-      setStep("telegram");
-    } else {
-      setStep("photo");
-    }
   }
 
   async function finish(skipPhoto = false) {
@@ -123,8 +110,7 @@ export default function OnboardingPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: phone || null,
-          phone_notifications: !!phone,
+          phone_notifications: telegramConnected,
           avatar_url: avatarUrl,
           onboarding_completed: true,
         }),
@@ -156,57 +142,10 @@ export default function OnboardingPage() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
 
-      {/* Step 1 — Phone */}
-      {step === "phone" && (
-        <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
-          <ProgressDots current={0} />
-
-          <div className="text-center">
-            <div className="mx-auto mb-3 text-4xl">📱</div>
-            <h2 className="text-xl font-black text-[color:var(--color-ink)]">
-              רוצה לקבל התראות לנייד?
-            </h2>
-            <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
-              כשמדד ה-UV מגיע ל-9 ומעלה נשלח לך התראה — שעה לפני ובשיא
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--color-ink-2)]">
-              מספר טלפון
-            </label>
-            <input
-              type="tel"
-              placeholder="+972501234567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className={inputClass}
-              dir="ltr"
-            />
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={advanceFromPhone}
-              className="w-full rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
-              style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
-            >
-              המשך →
-            </button>
-            <button
-              onClick={advanceFromPhone}
-              className="text-sm font-semibold text-[color:var(--color-ink-3)] transition-colors hover:text-[color:var(--color-ink-2)]"
-            >
-              דלג
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2 — Telegram */}
+      {/* Step 1 — Telegram */}
       {step === "telegram" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
-          <ProgressDots current={1} />
+          <ProgressDots current={0} />
 
           {telegramConnected ? (
             <div className="flex flex-col items-center gap-4 py-4">
@@ -221,10 +160,10 @@ export default function OnboardingPage() {
               <div className="text-center">
                 <div className="mx-auto mb-3 text-4xl">✈️</div>
                 <h2 className="text-xl font-black text-[color:var(--color-ink)]">
-                  חבר את טלגרם
+                  חבר את טלגרם להתראות UV
                 </h2>
                 <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
-                  לחץ על הכפתור, פתח את הבוט בטלגרם ולחץ Start — זה הכל
+                  כשמדד ה-UV מגיע ל-9 נשלח לך הודעה — שעה לפני ובשיא
                 </p>
               </div>
 
@@ -256,10 +195,10 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* Step 3 — Photo */}
+      {/* Step 2 — Photo */}
       {step === "photo" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
-          <ProgressDots current={2} />
+          <ProgressDots current={1} />
 
           <div className="text-center">
             <div className="mx-auto mb-3 text-4xl">📸</div>
