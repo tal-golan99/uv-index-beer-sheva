@@ -15,24 +15,37 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = getAdmin();
-  const meta = user.user_metadata ?? {};
 
-  // Upsert so a missing profile row is created on first access
-  const { data, error } = await admin
+  const { data: existing, error: selectError } = await admin
     .from("profiles")
-    .upsert({
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (selectError) {
+    console.error("[profile GET] select error:", selectError);
+    return NextResponse.json({ error: selectError.message }, { status: 500 });
+  }
+
+  if (existing) return NextResponse.json(existing);
+
+  // Profile row missing — create it now
+  const meta = user.user_metadata ?? {};
+  const { data: created, error: insertError } = await admin
+    .from("profiles")
+    .insert({
       id: user.id,
       display_name: meta.full_name ?? meta.name ?? null,
       avatar_url: meta.avatar_url ?? meta.picture ?? null,
-    }, { onConflict: "id", ignoreDuplicates: true })
+    })
     .select()
     .single();
 
-  if (error) {
-    console.error("[profile GET] upsert error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (insertError) {
+    console.error("[profile GET] insert error:", insertError);
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
-  return NextResponse.json(data);
+  return NextResponse.json(created);
 }
 
 export async function PUT(request: Request) {

@@ -19,9 +19,9 @@ export async function GET(request: Request) {
 
       const { data: profile } = await admin
         .from("profiles")
-        .select("id, onboarding_completed, avatar_url")
+        .select("id, onboarding_completed, avatar_url, telegram_chat_id")
         .eq("id", data.user.id)
-        .single();
+        .maybeSingle();
 
       const meta = data.user.user_metadata ?? {};
 
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         }
       }
 
-      if (!profile.onboarding_completed) {
+      if (!profile.onboarding_completed || !profile.telegram_chat_id) {
         return NextResponse.redirect(`${origin}/onboarding`);
       }
 
