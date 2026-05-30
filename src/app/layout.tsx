@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import { Assistant } from "next/font/google";
 import "./globals.css";
 
+const assistant = Assistant({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-assistant",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "UV Index — באר שבע",
-  description: "מדד UV בזמן אמת לבאר שבע עם גרפים ומערכת התראות",
+  title: "לבריכה! — מזג אוויר ובריכה בבאר שבע",
+  description: "מדד UV בזמן אמת לבאר שבע, תחזית שבועית, ומי בבריכה עכשיו",
 };
 
 export default function RootLayout({
@@ -12,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="he" dir="rtl">
-      <body className="min-h-screen bg-gray-950 text-white antialiased">
+    <html lang="he" dir="rtl" className={assistant.variable}>
+      <body className="min-h-screen text-[color:var(--color-ink)] antialiased">
         {children}
       </body>
     </html>

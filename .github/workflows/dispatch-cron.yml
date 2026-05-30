@@ -1,0 +1,15 @@
+name: UV Alert Dispatch
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call dispatch endpoint
+        run: |
+          curl -f -X GET "${{ secrets.APP_URL }}/api/cron/check" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

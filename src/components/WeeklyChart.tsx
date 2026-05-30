@@ -1,89 +1,70 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Cell,
-  ReferenceLine,
-  ResponsiveContainer,
-} from "recharts";
+import { getUVLevel, dayNameHe } from "@/lib/uv";
 import type { DailyUV } from "@/types";
 
 interface Props {
   week: DailyUV[];
 }
 
-function uvColor(uv: number): string {
-  if (uv >= 11) return "#a855f7";
-  if (uv >= 8)  return "#ef4444";
-  if (uv >= 6)  return "#f97316";
-  if (uv >= 3)  return "#eab308";
-  return "#22c55e";
-}
+function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
+  const level = getUVLevel(day.max_uv);
+  const barPct = Math.min(day.max_uv / 11, 1) * 100;
+  const dateLabel = new Date(day.date + "T12:00:00").toLocaleDateString("he-IL", {
+    day: "numeric",
+    month: "numeric",
+  });
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("he-IL", { weekday: "short", day: "numeric" });
-}
-
-interface TooltipProps {
-  active?: boolean;
-  payload?: { value: number; payload: DailyUV }[];
-}
-
-function CustomTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload?.length) return null;
-  const uv = payload[0].value;
-  const date = payload[0].payload.date;
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 shadow-xl">
-      <p className="text-xs text-gray-400">{formatDate(date)}</p>
-      <p className="text-2xl font-black" style={{ color: uvColor(uv) }}>
-        UV מקסימום: {uv.toFixed(1)}
+    <div
+      className="flex-shrink-0 flex flex-col items-center gap-2 rounded-2xl p-4 transition-all duration-200 hover:scale-[1.03] cursor-default bg-white"
+      style={{
+        minWidth: "84px",
+        border: `1px solid ${isToday ? level.color : "var(--color-pool-100)"}`,
+        boxShadow: isToday
+          ? `0 10px 24px -10px ${level.color}`
+          : "0 4px 12px -8px rgba(2,132,199,0.4)",
+      }}
+    >
+      <p className="text-xs font-bold text-[color:var(--color-ink-2)]">{dayNameHe(day.date)}</p>
+      <p className="text-[10px] text-[color:var(--color-ink-3)]">{dateLabel}</p>
+
+      {/* UV bar */}
+      <div className="w-full h-1.5 rounded-full" style={{ background: "var(--color-pool-100)" }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${barPct}%`, backgroundColor: level.color }}
+        />
+      </div>
+
+      {/* UV value */}
+      <p className="text-xl font-black tabular-nums" style={{ color: level.color }}>
+        {day.max_uv.toFixed(0)}
       </p>
+
+      {isToday && (
+        <span
+          className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
+          style={{ background: level.color }}
+        >
+          היום
+        </span>
+      )}
     </div>
   );
 }
 
 export default function WeeklyChart({ week }: Props) {
-  const data = week.map((d) => ({
-    ...d,
-    day: formatDate(d.date),
-  }));
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="bg-gray-900 rounded-2xl p-6 space-y-4">
-      <h2 className="text-lg font-semibold text-gray-100">גרף שבועי — UV מקסימום</h2>
-
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart
-          data={data}
-          margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-          <XAxis
-            dataKey="day"
-            tick={{ fill: "#6b7280", fontSize: 11 }}
-            tickLine={false}
-          />
-          <YAxis
-            domain={[0, 12]}
-            tick={{ fill: "#6b7280", fontSize: 11 }}
-            tickLine={false}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine y={9} stroke="#ef4444" strokeDasharray="4 4" />
-          <Bar dataKey="max_uv" radius={[6, 6, 0, 0]}>
-            {data.map((entry) => (
-              <Cell key={entry.date} fill={uvColor(entry.max_uv)} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+      <h2 className="text-base font-extrabold text-[color:var(--color-ink)] mb-4">תחזית שבועית</h2>
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+        {week.map((day) => (
+          <DayCard key={day.date} day={day} isToday={day.date === todayStr} />
+        ))}
+      </div>
     </div>
   );
 }

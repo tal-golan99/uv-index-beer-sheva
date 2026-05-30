@@ -1,19 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===== Pool & Sun theme tokens ===== */
+@theme {
+  --color-pool-50:  #f0f9ff;
+  --color-pool-100: #e0f2fe;
+  --color-pool-200: #bae6fd;
+  --color-pool-300: #7dd3fc;
+  --color-pool-400: #38bdf8;
+  --color-pool-500: #0ea5e9;
+  --color-pool-600: #0284c7;
+  --color-pool-700: #0369a1;
+
+  --color-sun-300: #fde047;
+  --color-sun-400: #facc15;
+  --color-sun-500: #eab308;
+
+  --color-ink:    #0f172a;
+  --color-ink-2:  #475569;
+  --color-ink-3:  #94a3b8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --bg-top: #e0f2fe;
+  --bg-bottom: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -10%, rgba(125, 211, 252, 0.55), transparent 70%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 45%);
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-assistant), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Festive variant when UV >= 9 — warmer, brighter, sunnier */
+body.pool-time {
+  --bg-top: #fef9c3;
+  --bg-bottom: #e0f2fe;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -5%, rgba(250, 204, 21, 0.55), transparent 65%),
+    radial-gradient(ellipse 100% 60% at 50% 110%, rgba(56, 189, 248, 0.45), transparent 70%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 60%);
+}
+
+/* Hide scrollbar but keep scrolling */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== Animations ===== */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-7px) rotate(2deg); }
+}
+@keyframes drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(40px); }
+}
+@keyframes sun-pulse {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 18px rgba(250,204,21,0.55)); }
+  50%      { transform: scale(1.07); filter: drop-shadow(0 0 34px rgba(250,204,21,0.85)); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pop-in {
+  0%   { transform: scale(0.6) translateY(20px); opacity: 0; }
+  60%  { transform: scale(1.06) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.anim-float   { animation: float-y 6s ease-in-out infinite; }
+.anim-bob     { animation: bob 4s ease-in-out infinite; }
+.anim-sun     { animation: sun-pulse 4s ease-in-out infinite; }
+.anim-pop     { animation: pop-in 0.6s cubic-bezier(.34,1.56,.64,1) both; }
+.anim-rise    { animation: rise-in 0.5s ease both; }
+
+/* Shimmering gradient text (used for the giant "מהר לבריכה" title) */
+.shimmer-text {
+  background: linear-gradient(100deg, #0284c7 20%, #38bdf8 40%, #fde047 55%, #38bdf8 70%, #0284c7 90%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Soft, very slow light sweep — a calm sheen, not a flicker */
+.water-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0) 65%
+  );
+  background-size: 250% 100%;
+  animation: shimmer 14s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ===== Scroll-reveal (IntersectionObserver-driven) ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-float, .anim-bob, .anim-sun, .anim-pop, .anim-rise,
+  .shimmer-text, .water-sheen::after {
+    animation: none !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
