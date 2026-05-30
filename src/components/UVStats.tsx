@@ -57,7 +57,7 @@ export default function UVStats({ today }: Props) {
         value={maxUV.toFixed(1)}
         color={level.color}
       />
-      <StatCard icon="⏰" label="שעת שיא" value={peakTime} sub="הכי שמשי" />
+      <StatCard icon="⏰" label="שעת שיא" value={peakTime} />
       <StatCard
         icon="🏖️"
         label="שעות שמש"

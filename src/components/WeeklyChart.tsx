@@ -39,7 +39,7 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
 
       {/* UV value */}
       <p className="text-xl font-black tabular-nums" style={{ color: level.color }}>
-        {day.max_uv.toFixed(0)}
+        {day.max_uv.toFixed(1)}
       </p>
 
       {isToday && (

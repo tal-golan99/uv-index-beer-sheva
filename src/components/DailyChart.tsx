@@ -66,21 +66,12 @@ export default function DailyChart({ hours }: Props) {
 
   return (
     <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
-      <div className="flex items-end justify-between mb-5">
-        <div>
-          <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">מדד UV היום</h2>
-          <p className="text-xs text-[color:var(--color-ink-3)] mt-0.5">געו בגרף לצפייה לפי שעה</p>
-        </div>
-        <div className="text-right">
-          <span className="text-3xl font-black tabular-nums" style={{ color: activeLevel.color }}>
-            {activeUV.toFixed(1)}
-          </span>
-          <p className="text-xs mt-0.5 text-[color:var(--color-ink-3)]">
-            {data[activeIdx]?.hour ?? ""}
-          </p>
-        </div>
+      <div className="mb-5">
+        <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">מדד UV היום</h2>
+        <p className="text-xs text-[color:var(--color-ink-3)] mt-0.5">העבירו עליו כדי לראות לפי שעה</p>
       </div>
 
+      <div style={{ touchAction: "none" }}>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart
           data={data}
@@ -136,6 +127,7 @@ export default function DailyChart({ hours }: Props) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
