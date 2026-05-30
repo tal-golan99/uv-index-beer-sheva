@@ -15,7 +15,7 @@ No test framework is configured yet.
 
 ## Architecture
 
-**Stack**: Next.js 15 App Router + TypeScript, Tailwind CSS v4, Recharts v3, Supabase, Resend, Vercel.
+**Stack**: Next.js 15 App Router + TypeScript, Tailwind CSS v4, Recharts v3, Supabase, Vercel.
 
 ### Data flow
 
@@ -27,7 +27,7 @@ No test framework is configured yet.
 
 `vercel.json` registers two cron schedules for `/api/cron/check`:
 - `0 7 * * *` — morning seed: fetches today's forecast, finds first hour where UV ≥ 9, writes a row to `daily_alerts` with `warn_at` (threshold − 1h) and `threshold_at`.
-- `*/30 * * * *` — dispatch: reads unsent `daily_alerts` where `warn_at ≤ now+35min`, sends Email via Resend and WhatsApp via CallMeBot, then marks each field sent.
+- `*/30 * * * *` — dispatch: reads unsent `daily_alerts` where `warn_at ≤ now+35min`, sends WhatsApp via CallMeBot, then marks each field sent. Triggered externally via cron-job.org (Vercel Hobby plan only supports daily crons).
 
 The cron endpoint requires `Authorization: Bearer <CRON_SECRET>` — Vercel injects this automatically; for local testing pass it manually.
 
@@ -44,9 +44,8 @@ RLS is enabled; only `service_role` has access. Use `supabaseAdmin` (service rol
 See `.env.local.example`. Required vars:
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — client-safe
 - `SUPABASE_SERVICE_ROLE_KEY` — server only (cron, subscribe API)
-- `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
-- `CRON_SECRET` — must match value set in Vercel project settings
-- `NEXT_PUBLIC_APP_URL` — used in unsubscribe links in emails
+- `CRON_SECRET` — must match value set in Vercel project settings and cron-job.org header
+- `NEXT_PUBLIC_APP_URL` — production URL
 
 ### Tailwind v4 note
 
