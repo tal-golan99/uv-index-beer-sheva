@@ -6,6 +6,14 @@ import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/types";
 
+function TelegramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+    </svg>
+  );
+}
+
 const inputClass =
   "w-full rounded-xl bg-white px-4 py-3 text-base text-[color:var(--color-ink)] placeholder-[color:var(--color-ink-3)] ring-1 ring-[color:var(--color-pool-200)] outline-none transition-all focus:ring-2 focus:ring-[color:var(--color-pool-400)]";
 
@@ -154,8 +162,8 @@ export default function AccountPage() {
       setAvatarFile(null);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "שגיאה");
+    } catch {
+      setError("שגיאה בשמירה. נסה שוב מאוחר יותר.");
     } finally {
       setSaving(false);
     }
@@ -183,16 +191,17 @@ export default function AccountPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <span>←</span> חזרה
+          <span>→</span> חזרה
         </Link>
 
         <h1 className="text-2xl font-black text-[color:var(--color-ink)]">החשבון שלי</h1>
 
-        <form onSubmit={save} className="space-y-5">
+        <form onSubmit={save} method="post" className="space-y-5">
           {/* Avatar */}
           <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
             <button
               type="button"
+              aria-label="שנה תמונת פרופיל"
               onClick={() => fileInputRef.current?.click()}
               className="relative h-24 w-24 overflow-hidden rounded-full ring-4 ring-[color:var(--color-pool-200)] ring-offset-2 transition-transform hover:scale-105 active:scale-95"
             >
@@ -216,12 +225,14 @@ export default function AccountPage() {
           {/* Fields */}
           <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
             <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-[color:var(--color-ink-2)]">שם תצוגה</label>
+              <label htmlFor="displayName" className="block text-sm font-semibold text-[color:var(--color-ink-2)]">שם תצוגה</label>
               <input
+                id="displayName"
                 type="text"
                 placeholder="איך לקרוא לך?"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+                maxLength={50}
                 className={inputClass}
               />
             </div>
@@ -250,19 +261,30 @@ export default function AccountPage() {
             ) : showTelegramSetup ? (
               <div className="space-y-3">
                 <p className="text-sm text-[color:var(--color-ink-2)]">לחץ על הכפתור ואז Start בטלגרם</p>
-                <a
-                  href={telegramLink ?? "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95 ${!telegramLink ? "opacity-50 pointer-events-none" : ""}`}
-                  style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                  </svg>
-                  {telegramLink ? "פתח בטלגרם" : "מכין לינק..."}
-                </a>
-                <p className="text-center text-xs text-[color:var(--color-ink-3)]">ממתין לחיבור...</p>
+                {telegramLink ? (
+                  <a
+                    href={telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
+                    style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                  >
+                    <TelegramIcon />
+                    פתח בטלגרם
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white opacity-50"
+                    style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                  >
+                    <TelegramIcon />
+                    מכין לינק...
+                  </button>
+                )}
+                <p aria-live="polite" className="text-center text-xs text-[color:var(--color-ink-3)]">ממתין לחיבור...</p>
               </div>
             ) : (
               <button
@@ -271,9 +293,7 @@ export default function AccountPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
                 style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                </svg>
+                <TelegramIcon />
                 חבר טלגרם
               </button>
             )}
@@ -310,6 +330,7 @@ export default function AccountPage() {
         </form>
 
         <button
+          type="button"
           onClick={signOut}
           className="w-full rounded-2xl py-3 text-sm font-bold text-[color:var(--color-ink-3)] ring-1 ring-[color:var(--color-pool-100)] transition-colors hover:bg-red-50 hover:text-red-600 hover:ring-red-200"
         >

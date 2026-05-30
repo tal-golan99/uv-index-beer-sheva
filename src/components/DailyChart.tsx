@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -13,7 +13,9 @@ interface Props {
 }
 
 function formatHour(iso: string): string {
-  const h = new Date(iso).getHours();
+  // Extract the hour directly from the ISO string (HH part of YYYY-MM-DDTHH:mm)
+  // to avoid timezone-dependent Date parsing causing hydration mismatches.
+  const h = parseInt(iso.slice(11, 13), 10);
   return `${h.toString().padStart(2, "0")}:00`;
 }
 
@@ -49,7 +51,13 @@ const UV_STROKE_STOPS = [
 
 export default function DailyChart({ hours }: Props) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const nowHour = new Date().getHours();
+  const [mounted, setMounted] = useState(false);
+  const [nowHour, setNowHour] = useState(0);
+
+  useEffect(() => {
+    setNowHour(new Date().getHours());
+    setMounted(true);
+  }, []);
 
   const data = hours.map((h) => ({ ...h, hour: formatHour(h.time) }));
   const activeIdx = hovered ?? nowHour;
@@ -72,6 +80,9 @@ export default function DailyChart({ hours }: Props) {
       </div>
 
       <div style={{ touchAction: "none" }}>
+      {!mounted ? (
+        <div style={{ height: 200 }} className="animate-pulse rounded-xl bg-[color:var(--color-pool-50)]" />
+      ) : (
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart
           data={data}
@@ -103,7 +114,7 @@ export default function DailyChart({ hours }: Props) {
             tick={{ fill: "#94a3b8", fontSize: 10 }}
             tickLine={false}
             axisLine={false}
-            interval={3}
+            interval="preserveStartEnd"
           />
           <YAxis
             domain={[0, 12]}
@@ -127,6 +138,7 @@ export default function DailyChart({ hours }: Props) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      )}
       </div>
     </div>
   );

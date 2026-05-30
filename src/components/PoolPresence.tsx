@@ -126,12 +126,18 @@ export default function PoolPresence() {
     if (!user) return;
     setChecking(true);
     try {
-      await fetch("/api/checkin", {
+      const res = await fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: inPool ? "out" : "in" }),
       });
-      // Realtime will update the list automatically
+      if (res.ok) {
+        const { data } = await supabase
+          .from("pool_presence")
+          .select("*")
+          .order("checked_in_at");
+        if (data) setSwimmers(data as PoolPresenceEntry[]);
+      }
     } finally {
       setChecking(false);
     }

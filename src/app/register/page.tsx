@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 function GoogleIcon() {
@@ -17,8 +18,20 @@ function GoogleIcon() {
 
 export default function RegisterPage() {
   const supabase = useMemo(() => createSupabaseBrowser(), []);
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect already-authenticated users to home
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) router.replace("/");
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session?.user) router.replace("/");
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase, router]);
 
   async function signInWithGoogle() {
     setError("");
@@ -40,7 +53,7 @@ export default function RegisterPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <span>←</span> חזרה
+          <span>→</span> חזרה
         </Link>
 
         <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl ring-1 ring-[color:var(--color-pool-100)]">
@@ -67,9 +80,6 @@ export default function RegisterPage() {
             </p>
           )}
 
-          <p className="text-center text-xs text-[color:var(--color-ink-3)]">
-            בהתחברות אתה מסכים לתנאי השימוש
-          </p>
         </div>
       </div>
     </main>
