@@ -4,13 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
-type Step = "phone" | "whatsapp" | "photo" | "saving";
+type Step = "phone" | "telegram" | "photo" | "saving";
 
 const inputClass =
   "w-full rounded-xl bg-white px-4 py-3 text-base text-[color:var(--color-ink)] placeholder-[color:var(--color-ink-3)] ring-1 ring-[color:var(--color-pool-200)] outline-none transition-all focus:ring-2 focus:ring-[color:var(--color-pool-400)]";
-
-const CALLMEBOT_LINK =
-  "https://wa.me/34644520722?text=I%20allow%20callmebot%20to%20send%20me%20messages";
 
 function ProgressDots({ current }: { current: number }) {
   return (
@@ -35,14 +32,15 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  const [callmebotKey, setCallmebotKey] = useState("");
-  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [telegramConnected, setTelegramConnected] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [googleAvatar, setGoogleAvatar] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -56,6 +54,35 @@ export default function OnboardingPage() {
     });
   }, [supabase, router]);
 
+  // Generate Telegram link when entering telegram step
+  useEffect(() => {
+    if (step !== "telegram") {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+
+    fetch("/api/telegram/start-token", { method: "POST" })
+      .then((r) => r.json())
+      .then(({ token, botUsername }) => {
+        if (token && botUsername) {
+          setTelegramLink(`https://t.me/${botUsername}?start=${token}`);
+        }
+      });
+
+    // Poll every 2s for connection
+    pollRef.current = setInterval(async () => {
+      const res = await fetch("/api/telegram/status");
+      const { connected } = await res.json();
+      if (connected) {
+        setTelegramConnected(true);
+        clearInterval(pollRef.current!);
+        setTimeout(() => setStep("photo"), 1200);
+      }
+    }, 2000);
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [step]);
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -65,7 +92,7 @@ export default function OnboardingPage() {
 
   function advanceFromPhone() {
     if (phone) {
-      setStep("whatsapp");
+      setStep("telegram");
     } else {
       setStep("photo");
     }
@@ -98,7 +125,6 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           phone: phone || null,
           phone_notifications: !!phone,
-          callmebot_apikey: callmebotKey || null,
           avatar_url: avatarUrl,
           onboarding_completed: true,
         }),
@@ -129,6 +155,8 @@ export default function OnboardingPage() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+
+      {/* Step 1 — Phone */}
       {step === "phone" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
           <ProgressDots current={0} />
@@ -155,9 +183,6 @@ export default function OnboardingPage() {
               className={inputClass}
               dir="ltr"
             />
-            <p className="text-xs text-[color:var(--color-ink-3)]">
-              גם בלי מספר תקבל התראות למייל Google שלך
-            </p>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -178,93 +203,60 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {step === "whatsapp" && (
+      {/* Step 2 — Telegram */}
+      {step === "telegram" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
           <ProgressDots current={1} />
 
-          <div className="text-center">
-            <div className="mx-auto mb-3 text-4xl">💬</div>
-            <h2 className="text-xl font-black text-[color:var(--color-ink)]">
-              הפעל התראות WhatsApp
-            </h2>
-            <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
-              שלח הודעה אחת ותקבל קוד — תהליך של 30 שניות
-            </p>
-          </div>
-
-          {/* Step 1: send activation message */}
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 rounded-2xl bg-[color:var(--color-pool-50)] p-4">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-pool-500)] text-xs font-black text-white">1</span>
-              <p className="text-sm text-[color:var(--color-ink-2)]">
-                לחץ כדי לשלוח הודעת הפעלה ל-CallMeBot ב-WhatsApp
+          {telegramConnected ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="text-5xl">✅</div>
+              <p className="text-center text-lg font-black text-[color:var(--color-ink)]">
+                מחובר לטלגרם!
               </p>
+              <p className="text-center text-sm text-[color:var(--color-ink-2)]">עובר לשלב הבא...</p>
             </div>
+          ) : (
+            <>
+              <div className="text-center">
+                <div className="mx-auto mb-3 text-4xl">✈️</div>
+                <h2 className="text-xl font-black text-[color:var(--color-ink)]">
+                  חבר את טלגרם
+                </h2>
+                <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
+                  לחץ על הכפתור, פתח את הבוט בטלגרם ולחץ Start — זה הכל
+                </p>
+              </div>
 
-            <a
-              href={CALLMEBOT_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setTimeout(() => setShowKeyInput(true), 1500)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
-              style={{ background: "linear-gradient(90deg, #25D366, #128C7E)" }}
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              פתח WhatsApp ושלח הודעה
-            </a>
-          </div>
+              <a
+                href={telegramLink ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95 ${!telegramLink ? "opacity-50 pointer-events-none" : ""}`}
+                style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+                {telegramLink ? "פתח בטלגרם" : "מכין לינק..."}
+              </a>
 
-          {/* Step 2: paste code — revealed after tapping the button */}
-          <div
-            className="space-y-3 overflow-hidden transition-all duration-500"
-            style={{ maxHeight: showKeyInput ? "200px" : "0px", opacity: showKeyInput ? 1 : 0 }}
-          >
-            <div className="flex items-start gap-3 rounded-2xl bg-[color:var(--color-pool-50)] p-4">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-pool-500)] text-xs font-black text-white">2</span>
-              <p className="text-sm text-[color:var(--color-ink-2)]">
-                קיבלת קוד ב-WhatsApp? הדבק אותו כאן
+              <p className="text-center text-xs text-[color:var(--color-ink-3)]">
+                ממתין לחיבור... האפליקציה תתקדם אוטומטית
               </p>
-            </div>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="הדבק את הקוד שקיבלת"
-              value={callmebotKey}
-              onChange={(e) => setCallmebotKey(e.target.value)}
-              className={inputClass}
-              dir="ltr"
-            />
-          </div>
 
-          {!showKeyInput && (
-            <button
-              onClick={() => setShowKeyInput(true)}
-              className="w-full text-center text-sm font-semibold text-[color:var(--color-pool-600)] underline underline-offset-2"
-            >
-              כבר קיבלתי קוד →
-            </button>
+              <button
+                onClick={() => setStep("photo")}
+                className="w-full text-sm font-semibold text-[color:var(--color-ink-3)] transition-colors hover:text-[color:var(--color-ink-2)]"
+              >
+                אגדיר אחר כך
+              </button>
+            </>
           )}
-
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={() => setStep("photo")}
-              className="w-full rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
-              style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
-            >
-              {callmebotKey ? "המשך →" : "המשך →"}
-            </button>
-            <button
-              onClick={() => { setCallmebotKey(""); setStep("photo"); }}
-              className="text-sm font-semibold text-[color:var(--color-ink-3)] transition-colors hover:text-[color:var(--color-ink-2)]"
-            >
-              אגדיר את זה אחר כך
-            </button>
-          </div>
         </div>
       )}
 
+      {/* Step 3 — Photo */}
       {step === "photo" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
           <ProgressDots current={2} />
@@ -279,7 +271,6 @@ export default function OnboardingPage() {
             </p>
           </div>
 
-          {/* Avatar preview */}
           <div className="flex flex-col items-center gap-4">
             <button
               onClick={() => fileInputRef.current?.click()}

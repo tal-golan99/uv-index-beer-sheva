@@ -16,8 +16,8 @@ export async function notifySubscribers(
 }
 
 async function notifyOne(sub: Subscriber, payload: AlertPayload) {
-  if (sub.whatsapp && sub.callmebot_apikey) {
-    await sendWhatsApp(sub.whatsapp, sub.callmebot_apikey, buildMessage(payload));
+  if (sub.telegram_chat_id) {
+    await sendTelegram(sub.telegram_chat_id, buildMessage(payload));
   }
 }
 
@@ -35,12 +35,14 @@ function buildMessage(payload: AlertPayload): string {
   return `קרינת ה-UV בבאר שבע הגיעה ל-${payload.uvValue} ב-${time}. מומלץ להישאר בצל, להשתמש בקרם הגנה SPF 50+ ולחבוש כובע.`;
 }
 
-async function sendWhatsApp(
-  phone: string,
-  apikey: string,
-  text: string
-): Promise<void> {
-  const params = new URLSearchParams({ phone, text, apikey });
-  const res = await fetch(`https://api.callmebot.com/whatsapp.php?${params}`);
-  if (!res.ok) throw new Error(`CallMeBot error: ${res.status}`);
+async function sendTelegram(chatId: string, text: string): Promise<void> {
+  const res = await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    }
+  );
+  if (!res.ok) throw new Error(`Telegram error: ${res.status}`);
 }

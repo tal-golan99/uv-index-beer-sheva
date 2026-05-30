@@ -21,6 +21,7 @@ export interface Subscriber {
   email: string | null;
   whatsapp: string | null;
   callmebot_apikey: string | null;
+  telegram_chat_id: string | null;
   threshold: number;
   active: boolean;
   created_at: string;
@@ -33,7 +34,7 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   phone: string | null;
-  callmebot_apikey: string | null;
+  telegram_chat_id: string | null;
   email_notifications: boolean;
   phone_notifications: boolean;
   active: boolean;

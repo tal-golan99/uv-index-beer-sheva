@@ -20,17 +20,17 @@ export async function getActiveSubscribers(): Promise<Subscriber[]> {
 export async function getActiveProfileSubscribers(): Promise<Subscriber[]> {
   const { data, error } = await getAdminClient()
     .from("profiles")
-    .select("id, phone, callmebot_apikey, active")
+    .select("id, telegram_chat_id, active")
     .eq("active", true)
     .eq("phone_notifications", true)
-    .not("callmebot_apikey", "is", null)
-    .not("phone", "is", null);
+    .not("telegram_chat_id", "is", null);
   if (error) throw error;
   return (data ?? []).map((p) => ({
     id: p.id,
     email: null,
-    whatsapp: p.phone as string,
-    callmebot_apikey: p.callmebot_apikey as string,
+    whatsapp: null,
+    callmebot_apikey: null,
+    telegram_chat_id: p.telegram_chat_id as string,
     threshold: 9,
     active: p.active as boolean,
     created_at: "",

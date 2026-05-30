@@ -34,7 +34,7 @@ export async function PUT(request: Request) {
     "display_name",
     "avatar_url",
     "phone",
-    "callmebot_apikey",
+    "telegram_chat_id",
     "email_notifications",
     "phone_notifications",
     "active",
