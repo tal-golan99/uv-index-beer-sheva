@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { fetchUVForecast } from "@/lib/openmeteo";
+import HeaderAuth from "@/components/HeaderAuth";
 import { BANNER_SENTENCES } from "@/lib/banner";
 import { LIFESTYLE_PHOTOS } from "@/lib/photos";
 import BodyTheme from "@/components/BodyTheme";
@@ -54,16 +55,7 @@ export default async function HomePage() {
             </div>
             <p className="mt-0.5 mr-8 text-xs text-[color:var(--color-ink-3)] md:text-sm">{dateLabel}</p>
           </div>
-          <Link
-            href="/register"
-            className="rounded-2xl px-6 py-3.5 text-base font-extrabold text-white transition-transform hover:scale-105 active:scale-95 md:px-8 md:py-4 md:text-lg"
-            style={{
-              background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",
-              boxShadow: "0 12px 28px -10px rgba(2,132,199,0.8)",
-            }}
-          >
-            התחבר / הרשם
-          </Link>
+          <HeaderAuth />
         </header>
 
         {/* Pool-time celebratory hero (UV >= 9 only) */}

@@ -28,6 +28,26 @@ export interface Subscriber {
 
 export type NotificationChannel = "email" | "whatsapp" | "both";
 
+export interface Profile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  phone: string | null;
+  email_notifications: boolean;
+  phone_notifications: boolean;
+  active: boolean;
+  onboarding_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PoolPresenceEntry {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  checked_in_at: string;
+}
+
 export interface DailyAlert {
   id: string;
   date: string;
