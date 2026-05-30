@@ -33,6 +33,7 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   phone: string | null;
+  callmebot_apikey: string | null;
   email_notifications: boolean;
   phone_notifications: boolean;
   active: boolean;

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Photo } from "@/lib/photos";
 
 interface Props {
@@ -17,20 +17,17 @@ interface Props {
   children?: React.ReactNode;
 }
 
-/**
- * Lightweight auto-advancing photo carousel. Uses native <img>, so EXIF
- * orientation from the phone photos is respected (CSS backgrounds would not be).
- */
 export default function ImageSlider({
   photos,
   aspect = "16 / 10",
   heightClass,
-  interval = 4500,
+  interval = 2000,
   rounded = "rounded-3xl",
   children,
 }: Props) {
   const [i, setI] = useState(0);
   const n = photos.length;
+  const touchStartX = useRef<number | null>(null);
 
   const go = useCallback((d: number) => setI((p) => (p + d + n) % n), [n]);
 
@@ -40,10 +37,30 @@ export default function ImageSlider({
     return () => clearInterval(id);
   }, [interval, n]);
 
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      if (Math.abs(dx) > 40) go(dx > 0 ? -1 : 1);
+      touchStartX.current = null;
+    },
+    [go],
+  );
+
   return (
     <div
       className={`relative w-full overflow-hidden ${rounded} ${heightClass ?? ""} ring-1 ring-[color:var(--color-pool-200)] shadow-md`}
-      style={heightClass ? undefined : { aspectRatio: aspect }}
+      style={
+        heightClass
+          ? { touchAction: "pan-y" }
+          : { aspectRatio: aspect, touchAction: "pan-y" }
+      }
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       {photos.map((p, idx) => (
         <Image

@@ -10,8 +10,8 @@ const assistant = Assistant({
 });
 
 export const metadata: Metadata = {
-  title: "לבריכה! — מזג אוויר ובריכה בבאר שבע",
-  description: "מדד UV בזמן אמת לבאר שבע, תחזית שבועית, ומי בבריכה עכשיו",
+  title: "בריכה עכשיו",
+  description: "מדד UV, מי נמצא בבריכה בזמן אמת",
 };
 
 export default function RootLayout({

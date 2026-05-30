@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchUVForecast, findThresholdHour } from "@/lib/openmeteo";
 import {
-  getActiveSubscribers,
+  getActiveProfileSubscribers,
   upsertDailyAlert,
   getPendingAlerts,
   markAlertSent,
@@ -55,7 +55,7 @@ async function seedTodayAlert(date: string) {
 async function dispatchPendingAlerts(now: Date) {
   const [alerts, subscribers] = await Promise.all([
     getPendingAlerts(now),
-    getActiveSubscribers(),
+    getActiveProfileSubscribers(),
   ]);
 
   if (!subscribers.length) return;
