@@ -19,16 +19,19 @@ export async function POST(request: Request) {
   const admin = getAdmin();
 
   if (action === "out") {
-    await admin.from("pool_presence").delete().eq("user_id", user.id);
+    const { error: delError } = await admin.from("pool_presence").delete().eq("user_id", user.id);
+    if (delError) console.error("[checkin] delete error", { userId: user.id, code: delError.code, message: delError.message });
     return NextResponse.json({ ok: true, action: "out" });
   }
 
   // action === "in" — get display info from profile
-  const { data: profile } = await admin
+  const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select("display_name, avatar_url")
     .eq("id", user.id)
     .single();
+
+  if (profileError) console.error("[checkin] profile fetch error", { userId: user.id, code: profileError.code, message: profileError.message });
 
   const meta = user.user_metadata ?? {};
   const displayName =
@@ -45,6 +48,9 @@ export async function POST(request: Request) {
     { onConflict: "user_id" }
   );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[checkin] upsert error", { userId: user.id, code: error.code, message: error.message, details: error.details, hint: error.hint });
+    return NextResponse.json({ error: "שגיאה. נסה שוב." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, action: "in" });
 }

@@ -4,6 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
+function TelegramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+    </svg>
+  );
+}
+
 type Step = "telegram" | "photo" | "saving";
 
 function ProgressDots({ current }: { current: number }) {
@@ -123,14 +131,16 @@ export default function OnboardingPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "שגיאה בשמירה");
+        // Log but don't block — user can always update profile settings later
+        const errBody = await res.json().catch(() => ({}));
+        console.error("[onboarding] profile save failed", errBody);
       }
 
       router.replace("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "שגיאה");
-      setStep("photo");
+      console.error("[onboarding] finish error", err);
+      // Still redirect home rather than leaving the user stranded
+      router.replace("/");
     }
   }
 
@@ -173,32 +183,46 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              <a
-                href={telegramLink ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95 ${!telegramLink ? "opacity-50 pointer-events-none" : ""}`}
-                style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                </svg>
-                {telegramLink ? "פתח בטלגרם" : "מכין לינק..."}
-              </a>
-
-              {error && (
-                <p className="text-center text-xs text-red-500">{error}</p>
+              {telegramLink ? (
+                <a
+                  href={telegramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
+                  style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                >
+                  <TelegramIcon />
+                  פתח בטלגרם
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white opacity-50"
+                  style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                >
+                  <TelegramIcon />
+                  {error ? "נכשל ביצירת לינק" : "מכין לינק..."}
+                </button>
               )}
 
-              <p className="text-center text-xs text-[color:var(--color-ink-3)]">
-                ממתין לחיבור... האפליקציה תתקדם אוטומטית
-              </p>
+              {error ? (
+                <div className="space-y-2 rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200">
+                  <p className="text-center text-xs font-semibold text-red-600">{error}</p>
+                  <p className="text-center text-xs text-red-500">ניתן להמשיך ולחבר טלגרם מאוחר יותר מדף החשבון</p>
+                </div>
+              ) : (
+                <p aria-live="polite" className="text-center text-xs text-[color:var(--color-ink-3)]">
+                  ממתין לחיבור... האפליקציה תתקדם אוטומטית
+                </p>
+              )}
 
               <button
                 onClick={() => setStep("photo")}
-                className="w-full text-sm font-semibold text-[color:var(--color-ink-3)] transition-colors hover:text-[color:var(--color-ink-2)]"
+                className="w-full rounded-xl bg-[color:var(--color-pool-50)] py-2.5 text-sm font-bold text-[color:var(--color-ink-2)] ring-1 ring-[color:var(--color-pool-200)] transition-colors hover:bg-[color:var(--color-pool-100)]"
               >
-                אגדיר אחר כך
+                אגדיר אחר כך →
               </button>
             </>
           )}

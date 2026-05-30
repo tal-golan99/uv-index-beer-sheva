@@ -17,20 +17,37 @@ export async function GET(request: Request) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      const { data: profile } = await admin
+      const { data: profile, error: profileError } = await admin
         .from("profiles")
         .select("id, onboarding_completed, avatar_url, telegram_chat_id")
         .eq("id", data.user.id)
         .maybeSingle();
 
+      if (profileError) {
+        console.error("[callback] profile select error", {
+          userId: data.user.id,
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+        });
+      }
+
       const meta = data.user.user_metadata ?? {};
 
       if (!profile) {
-        await admin.from("profiles").insert({
+        const { error: insertError } = await admin.from("profiles").insert({
           id: data.user.id,
           display_name: meta.full_name ?? meta.name ?? null,
           avatar_url: meta.avatar_url ?? meta.picture ?? null,
         });
+        if (insertError) {
+          console.error("[callback] profile insert error", {
+            userId: data.user.id,
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+          });
+        }
         return NextResponse.redirect(`${origin}/onboarding`);
       }
 

@@ -25,8 +25,8 @@ export async function POST() {
   });
 
   if (error) {
-    console.error("[start-token] insert error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[start-token] insert error", { userId: user.id, code: error.code, message: error.message, details: error.details, hint: error.hint });
+    return NextResponse.json({ error: "שגיאה ביצירת לינק טלגרם." }, { status: 500 });
   }
 
   return NextResponse.json({

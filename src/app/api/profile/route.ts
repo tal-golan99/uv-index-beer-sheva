@@ -23,8 +23,8 @@ export async function GET() {
     .maybeSingle();
 
   if (selectError) {
-    console.error("[profile GET] select error:", selectError);
-    return NextResponse.json({ error: selectError.message }, { status: 500 });
+    console.error("[profile GET] select error", { userId: user.id, code: selectError.code, message: selectError.message, details: selectError.details });
+    return NextResponse.json({ error: "שגיאה בטעינת הפרופיל." }, { status: 500 });
   }
 
   if (existing) return NextResponse.json(existing);
@@ -42,8 +42,8 @@ export async function GET() {
     .single();
 
   if (insertError) {
-    console.error("[profile GET] insert error:", insertError);
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+    console.error("[profile GET] insert error", { userId: user.id, code: insertError.code, message: insertError.message, details: insertError.details });
+    return NextResponse.json({ error: "שגיאה ביצירת פרופיל." }, { status: 500 });
   }
   return NextResponse.json(created);
 }
@@ -76,6 +76,9 @@ export async function PUT(request: Request) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[profile PUT] update error", { userId: user.id, code: error.code, message: error.message, details: error.details });
+    return NextResponse.json({ error: "שגיאה בשמירת הפרופיל." }, { status: 500 });
+  }
   return NextResponse.json(data);
 }
