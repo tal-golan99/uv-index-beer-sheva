@@ -19,7 +19,7 @@ function StatCard({ icon, label, value, sub, color }: StatCardProps) {
   return (
     <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-white p-5 text-center ring-1 ring-[color:var(--color-pool-100)] shadow-sm md:p-6">
       <span className="text-3xl md:text-4xl">{icon}</span>
-      <p className="mt-1 text-sm font-semibold text-[color:var(--color-ink-3)] md:text-base">{label}</p>
+      <p dir="rtl" className="mt-1 text-sm font-semibold text-[color:var(--color-ink-3)] md:text-base">{label}</p>
       <p
         className="text-2xl font-black leading-none text-[color:var(--color-ink)] sm:text-3xl md:text-4xl"
         style={color ? { color } : {}}
@@ -62,7 +62,7 @@ export default function UVStats({ today }: Props) {
         icon="🏖️"
         label="שעות שמש"
         value={`${sunnyHours}`}
-        sub="שעות מהנות"
+        sub="בסה״כ היום"
       />
     </div>
   );

@@ -79,7 +79,14 @@ export default function OnboardingPage() {
       })
       .catch(() => setError("שגיאה ביצירת לינק. נסה לרענן."));
 
+    let attempts = 0;
     pollRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts > 75) {
+        clearInterval(pollRef.current!);
+        setError("הזמן פג. לחץ 'אגדיר אחר כך' כדי להמשיך.");
+        return;
+      }
       const res = await fetch("/api/telegram/status");
       const { connected } = await res.json();
       if (connected) {
@@ -87,7 +94,7 @@ export default function OnboardingPage() {
         clearInterval(pollRef.current!);
         setTimeout(() => setStep("photo"), 1200);
       }
-    }, 2000);
+    }, 4000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [step]);
