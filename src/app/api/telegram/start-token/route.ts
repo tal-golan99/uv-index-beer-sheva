@@ -24,7 +24,10 @@ export async function POST() {
     user_id: user.id,
   });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[start-token] insert error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({
     token,

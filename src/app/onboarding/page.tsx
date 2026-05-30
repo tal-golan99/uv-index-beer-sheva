@@ -58,12 +58,18 @@ export default function OnboardingPage() {
     }
 
     fetch("/api/telegram/start-token", { method: "POST" })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error ${r.status}`);
+        return r.json();
+      })
       .then(({ token, botUsername }) => {
         if (token && botUsername) {
           setTelegramLink(`https://t.me/${botUsername}?start=${token}`);
+        } else {
+          setError("לא הצלחנו ליצור לינק. נסה לרענן.");
         }
-      });
+      })
+      .catch(() => setError("שגיאה ביצירת לינק. נסה לרענן."));
 
     pollRef.current = setInterval(async () => {
       const res = await fetch("/api/telegram/status");
@@ -179,6 +185,10 @@ export default function OnboardingPage() {
                 </svg>
                 {telegramLink ? "פתח בטלגרם" : "מכין לינק..."}
               </a>
+
+              {error && (
+                <p className="text-center text-xs text-red-500">{error}</p>
+              )}
 
               <p className="text-center text-xs text-[color:var(--color-ink-3)]">
                 ממתין לחיבור... האפליקציה תתקדם אוטומטית
