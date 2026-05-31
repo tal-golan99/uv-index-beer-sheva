@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "@phosphor-icons/react";
+import Wordmark from "@/components/Wordmark";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 function GoogleIcon() {
@@ -53,15 +55,17 @@ export default function RegisterPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <span>→</span> חזרה
+          <ArrowRight size={18} aria-hidden /> חזרה
         </Link>
 
-        <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl ring-1 ring-[color:var(--color-pool-100)]">
+        <div className="space-y-6 rounded-3xl bg-white p-8 shadow-pool-lg ring-1 ring-[color:var(--color-pool-100)]">
           <div className="text-center">
-            <div className="mx-auto mb-3 text-5xl">🏊</div>
-            <h1 className="text-2xl font-black text-[color:var(--color-ink)]">התחברות / הרשמה</h1>
+            <div className="mb-4 flex justify-center">
+              <Wordmark size="md" />
+            </div>
+            <h1 className="text-2xl font-black text-[color:var(--color-ink)]">התחברות מהירה</h1>
             <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
-              התחבר עם Google כדי לראות מי בבריכה ולהצטרף ל-Pool Buddies
+              חיבור עם Google ואתה בפנים: רואה מי בבריכה ומסמן את עצמך כשאתה במים
             </p>
           </div>
 

@@ -145,11 +145,11 @@ export default function PoolStreak() {
       <div className="anim-rise radius-card shadow-pool-sm bg-white px-5 py-4 text-center ring-1 ring-[color:var(--color-pool-100)]">
         {daysSince === null ? (
           <p className="text-sm font-semibold text-[color:var(--color-ink-2)] sm:text-base">
-            עדיין לא נכנסת לבריכה 🏊
+            עוד לא קפצת למים. הכל עוד לפניך.
           </p>
         ) : daysSince === 0 ? (
           <p className="text-sm font-semibold text-[color:var(--color-ink)] sm:text-base">
-            היית בבריכה היום! 🎉
+            היית היום בבריכה. כל הכבוד.
           </p>
         ) : (
           <p className="text-sm font-semibold text-[color:var(--color-ink-2)] sm:text-base">

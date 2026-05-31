@@ -1,3 +1,5 @@
+import { Sun } from "@phosphor-icons/react/dist/ssr";
+
 interface Props {
   /** Sentence chosen server-side (see lib/banner.ts) to avoid hydration drift. */
   sentence: string;
@@ -16,9 +18,13 @@ export default function RotatingBanner({ sentence }: Props) {
         boxShadow: "0 6px 18px -8px rgba(219,154,8,0.45)",
       }}
     >
-      <span className="anim-sun text-lg leading-none shrink-0" aria-hidden>
-        ☀️
-      </span>
+      <Sun
+        weight="fill"
+        size={20}
+        color="var(--color-sun-500)"
+        className="anim-sun shrink-0"
+        aria-hidden
+      />
       <p className="text-sm font-semibold text-[color:var(--color-ink)] leading-snug">
         {sentence}
       </p>

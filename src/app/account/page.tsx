@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowRight, CheckCircle } from "@phosphor-icons/react";
+import Wordmark from "@/components/Wordmark";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/types";
 
@@ -198,14 +200,17 @@ export default function AccountPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <span>→</span> חזרה
+          <ArrowRight size={18} aria-hidden /> חזרה
         </Link>
 
-        <h1 className="text-2xl font-black text-[color:var(--color-ink)]">החשבון שלי</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-black text-[color:var(--color-ink)]">החשבון שלי</h1>
+          <Wordmark size="sm" />
+        </div>
 
         <form onSubmit={save} method="post" className="space-y-5">
           {/* Avatar */}
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
             <button
               type="button"
               aria-label="שנה תמונת פרופיל"
@@ -230,7 +235,7 @@ export default function AccountPage() {
           </div>
 
           {/* Fields */}
-          <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+          <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
             <div className="space-y-1.5">
               <label htmlFor="displayName" className="block text-sm font-semibold text-[color:var(--color-ink-2)]">שם תצוגה</label>
               <input
@@ -246,7 +251,7 @@ export default function AccountPage() {
           </div>
 
           {/* Telegram */}
-          <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+          <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">התראות טלגרם</h2>
               {telegramConnected && (
@@ -262,7 +267,7 @@ export default function AccountPage() {
 
             {telegramConnected ? (
               <div className="flex items-center gap-3 rounded-xl bg-green-50 px-4 py-3 ring-1 ring-green-200">
-                <span className="text-lg">✅</span>
+                <CheckCircle weight="fill" size={20} className="text-green-600" aria-hidden />
                 <p className="text-sm font-semibold text-green-800">מחובר לטלגרם</p>
               </div>
             ) : showTelegramSetup ? (
@@ -308,7 +313,7 @@ export default function AccountPage() {
 
           {/* Notifications toggle */}
           {telegramConnected && (
-            <div className="space-y-3 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+            <div className="space-y-3 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
               <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">התראות</h2>
               <label className="flex items-center justify-between gap-3">
                 <span className="text-sm text-[color:var(--color-ink-2)]">התראות UV בטלגרם</span>

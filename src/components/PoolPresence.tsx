@@ -214,7 +214,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between px-1">
-        <h2 className="display-title text-lg font-extrabold text-[color:var(--color-ink)] sm:text-xl">
+        <h2 className="display-title text-lg text-[color:var(--color-ink)] sm:text-xl">
           מי בבריכה עכשיו
         </h2>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-pool-100)] px-3 py-1 text-xs font-bold text-[color:var(--color-pool-700)] sm:text-sm">
@@ -252,7 +252,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
         {visibleSwimmers.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="radius-nested bg-white/85 px-5 py-3 text-sm font-bold text-[color:var(--color-ink-2)] backdrop-blur-sm">
-              אף אחד בבריכה עדיין 😴
+              הבריכה ריקה כרגע. תהיה אתה הראשון.
             </p>
           </div>
         )}
@@ -263,7 +263,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
         inPool ? (
           <div className="radius-card shadow-pool-sm flex flex-col items-center gap-3 bg-white px-5 py-5 text-center ring-1 ring-[color:var(--color-pool-200)] sm:flex-row sm:justify-between sm:text-right">
             <p className="text-lg font-extrabold text-[color:var(--color-pool-700)] sm:text-xl">
-              🎉 אתה בבריכה! החברים שלך מקבלים הודעה עכשיו
+              אתה בפנים. כל החברים שלך כבר קיבלו התראה.
             </p>
             <button
               onClick={toggleCheckin}
@@ -283,11 +283,11 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
               borderColor: "var(--color-pool-200)",
             }}
           >
-            <p className="display-title text-3xl font-black text-[color:var(--color-ink)] sm:text-4xl md:text-5xl">
+            <p className="display-title text-3xl text-[color:var(--color-ink)] sm:text-4xl md:text-5xl">
               {currentUV < 4 ? (
-                <>הבריכה מחכה לך 🏊</>
+                <>הבריכה מחכה. בוא כבר.</>
               ) : (
-                <>אל תהיה לוזר,<br />לך לבריכה 🥲</>
+                <>אל תהיה לוזר.<br />לך לבריכה.</>
               )}
             </p>
             <button
@@ -307,7 +307,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
       ) : (
         <div className="radius-card shadow-pool-sm flex flex-col items-center gap-3 bg-white px-5 py-6 text-center ring-1 ring-[color:var(--color-pool-200)]">
           <p className="text-lg font-extrabold text-[color:var(--color-ink)]">
-            התחבר כדי לסמן שאתה בבריכה 🏊
+            מתחברים פעם אחת, ומסמנים שאתם במים.
           </p>
           <a
             href="/register"

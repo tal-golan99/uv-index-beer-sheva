@@ -49,12 +49,28 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+type Gender = "male" | "female";
+const AV_R = 13; // avatar radius (SVG units) at the needle tip
+
 export default function UVGauge({ value }: Props) {
   // Animated fill value (for arc + number) and dot value (springy). Start empty
   // and only ever fill up, so the reveal reads as a single rising motion.
   const [fill, setFill] = useState(0);
   const [dotUV, setDotUV] = useState(0);
   const raf = useRef<number | null>(null);
+
+  // Which Yuvi rides the needle tip. Persisted so the choice sticks across visits.
+  // Default "male" on both server and first client render to avoid a hydration
+  // mismatch; the stored preference is applied after mount.
+  const [gender, setGender] = useState<Gender>("male");
+  useEffect(() => {
+    const saved = localStorage.getItem("yuvi-gender");
+    if (saved === "male" || saved === "female") setGender(saved);
+  }, []);
+  const chooseGender = (g: Gender) => {
+    setGender(g);
+    localStorage.setItem("yuvi-gender", g);
+  };
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -92,7 +108,7 @@ export default function UVGauge({ value }: Props) {
       />
 
       <svg
-        viewBox="0 0 200 110"
+        viewBox="0 0 200 118"
         className="relative w-full max-w-xs"
         role="img"
         aria-label={`UV index ${value}`}
@@ -125,6 +141,11 @@ export default function UVGauge({ value }: Props) {
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+
+          {/* clipPath must live in defs so the browser resolves the reference regardless of paint order */}
+          <clipPath id="yuviClip">
+            <circle cx={dot.x} cy={dot.y} r={AV_R} />
+          </clipPath>
         </defs>
 
         <path d={ARC} fill="none" stroke="url(#trackGrad)" strokeWidth="10" strokeLinecap="round" />
@@ -164,8 +185,19 @@ export default function UVGauge({ value }: Props) {
           );
         })}
 
-        <circle cx={dot.x} cy={dot.y} r="6" fill={level.color} filter="url(#glow)" />
-        <circle cx={dot.x} cy={dot.y} r="3" fill="white" />
+        {/* Needle tip: a circular photo of the chosen Yuvi, ringed in the
+            current severity colour so the level cue survives. */}
+        <circle cx={dot.x} cy={dot.y} r={AV_R + 2} fill={level.color} filter="url(#glow)" />
+        <image
+          href={`/yuvi/${gender}.png`}
+          x={dot.x - AV_R}
+          y={dot.y - AV_R}
+          width={AV_R * 2}
+          height={AV_R * 2}
+          clipPath="url(#yuviClip)"
+          preserveAspectRatio="xMidYMid slice"
+        />
+        <circle cx={dot.x} cy={dot.y} r={AV_R} fill="none" stroke="white" strokeWidth="1.5" />
 
         <text x={CX} y={CY - 18} textAnchor="middle" fill="#0c1b29" fontSize="38" fontWeight="800" fontFamily="system-ui">
           {fill.toFixed(1)}
@@ -181,6 +213,31 @@ export default function UVGauge({ value }: Props) {
         style={{ backgroundColor: level.colorText, boxShadow: `0 8px 20px -10px ${level.colorText}` }}
       >
         שמש {level.label}
+      </div>
+
+      {/* Yuvi picker — which avatar rides the needle tip */}
+      <div className="flex flex-col items-center gap-1.5" dir="rtl">
+        <span className="text-xs font-medium text-slate-500">תבחר את היובי שלך</span>
+        <div className="inline-flex rounded-full bg-slate-100 p-0.5">
+          {([
+            { g: "male", label: "זכר" },
+            { g: "female", label: "נקבה" },
+          ] as const).map(({ g, label }) => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => chooseGender(g)}
+              aria-pressed={gender === g}
+              className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors ${
+                gender === g
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

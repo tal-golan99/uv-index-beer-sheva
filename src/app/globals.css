@@ -46,6 +46,17 @@
   box-sizing: border-box;
 }
 
+/* Keyboard focus: one consistent, pool-colored ring on every interactive element.
+   :focus-visible only — mouse/touch users keep the existing hover/active affordances. */
+:focus-visible {
+  outline: 2px solid var(--color-pool-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 html, body {
   min-height: 100%;
 }
@@ -81,6 +92,17 @@ body.pool-time {
 .shadow-pool-lg { box-shadow: var(--shadow-lg); }
 .radius-card { border-radius: var(--radius-lg); }
 .radius-nested { border-radius: var(--radius-md); }
+
+/* ===== Section surface treatments — vary the container by role, never stamp one
+   white card on every section. Hero = elevated white (radius-card + shadow-pool-lg);
+   full-bleed media = the pool image; bare = straight on the page gradient; band =
+   a soft pool wash that GROUPS a zone without being another ring-card. ===== */
+.surface-band {
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(125% 100% at 50% 0%, rgba(180, 221, 248, 0.38), transparent 68%),
+    var(--color-pool-50);
+}
 
 /* ===== Typography helpers (single family, real hierarchy) ===== */
 /* Hebrew display face (Suez One) for headings/hero — gives real heading↔body

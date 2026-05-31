@@ -26,10 +26,10 @@ export default function PoolBuddiesCTA() {
       }}
     >
       <p className="text-lg font-black text-[color:var(--color-ink)] md:text-2xl">
-        הצטרף ל-Pool Buddies שלך 🏊
+        החברים שלך כבר בדרך לבריכה.
       </p>
       <p className="text-sm text-[color:var(--color-ink-2)] md:text-base">
-        תראה מי בבריכה, ותעדכן את החברים ברגע שאתה קופץ למים
+        ראה מי במים עכשיו, וסמן את עצמך ברגע שאתה קופץ פנימה.
       </p>
       <Link
         href="/register"
@@ -38,7 +38,7 @@ export default function PoolBuddiesCTA() {
           background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",
         }}
       >
-        התחבר / הרשם עכשיו
+        התחבר עם Google
       </Link>
     </div>
   );

@@ -1,15 +1,15 @@
 import { fetchUVForecast } from "@/lib/openmeteo";
 import HeaderAuth from "@/components/HeaderAuth";
+import Wordmark from "@/components/Wordmark";
 import { BANNER_SENTENCES } from "@/lib/banner";
 import { LIFESTYLE_PHOTOS } from "@/lib/photos";
 import BodyTheme from "@/components/BodyTheme";
 import Reveal from "@/components/Reveal";
 import RotatingBanner from "@/components/RotatingBanner";
 import PoolStreak from "@/components/PoolStreak";
-import PoolTimeHero from "@/components/PoolTimeHero";
+import PoolVerdict from "@/components/PoolVerdict";
 import PoolPresence from "@/components/PoolPresence";
 import ImageSlider from "@/components/ImageSlider";
-import UVGauge from "@/components/UVGauge";
 import UVStats from "@/components/UVStats";
 import DailyChart from "@/components/DailyChart";
 import WeeklyChart from "@/components/WeeklyChart";
@@ -45,76 +45,65 @@ export default async function HomePage() {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 space-y-5 md:py-10 md:space-y-7">
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 md:py-10">
+        <h1 className="sr-only">UV Pool — מדד UV ומי נמצא בבריכה בבאר שבע</h1>
 
-        {/* Rotating daily banner */}
-        <RotatingBanner sentence={banner} />
-
-        {/* Personal "days since last pool visit" + last-7-days squares (logged-in only) */}
-        <PoolStreak />
-
-        {/* Screen-reader page title (city h2 is not the primary topic) */}
-        <h1 className="sr-only">בריכה עכשיו — UV Tracker</h1>
-
-        {/* Header: location + big auth button */}
+        {/* Top bar: wordmark + date | auth */}
         <header className="flex items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl md:text-2xl">📍</span>
-              <h2 className="text-xl font-extrabold text-[color:var(--color-ink)] md:text-2xl">באר שבע</h2>
-            </div>
-            <p className="mt-0.5 mr-8 text-xs text-[color:var(--color-ink-2)] md:text-sm">{dateLabel}</p>
+            <Wordmark size="md" city />
+            <p className="mt-1.5 text-xs text-[color:var(--color-ink-2)] md:text-sm">{dateLabel}</p>
           </div>
           <HeaderAuth />
         </header>
 
-        {/* Pool-time celebratory hero (UV >= 9 only) */}
-        {poolTime && <PoolTimeHero uv={forecast.current} />}
+        {/* Daily one-liner */}
+        <div className="mt-5">
+          <RotatingBanner sentence={banner} />
+        </div>
 
-        {/* UV index — the headline metric, highest on the page, above the pool */}
-        <Reveal once variant="scale">
-          <div className="radius-card shadow-pool-lg bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] md:p-8">
-            <UVGauge value={forecast.current} />
-          </div>
-        </Reveal>
+        {/* Personal streak (logged-in only) */}
+        <div className="mt-4">
+          <PoolStreak />
+        </div>
 
-        {/* Colorful daily UV graph — also above the pool */}
-        <Reveal>
-          <DailyChart hours={forecast.today.hours} />
-        </Reveal>
+        {/* THE hero: the day's verdict + the UV gauge as evidence */}
+        <div className="mt-6 md:mt-8">
+          <PoolVerdict uv={forecast.current} poolTime={poolTime} />
+        </div>
 
-        {/* Who's at the pool now — social centerpiece */}
-        <Reveal>
+        {/* The social payoff — promoted right under the verdict */}
+        <Reveal className="mt-8 block md:mt-12">
           <PoolPresence currentUV={forecast.current} />
         </Reveal>
 
-        {/* Weekly forecast — its own row, below the pool */}
-        <Reveal>
-          <WeeklyChart week={forecast.week} today={todayStr} />
-        </Reveal>
-
-        {/* Quick stats */}
-        <Reveal>
-          <UVStats today={forecast.today} />
+        {/* The evidence zone — charts + stats grouped in one tinted band, not four
+            free-floating identical white cards */}
+        <Reveal className="mt-8 block md:mt-12">
+          <section className="surface-band space-y-6 p-4 sm:p-6">
+            <DailyChart hours={forecast.today.hours} />
+            <UVStats today={forecast.today} />
+            <WeeklyChart week={forecast.week} today={todayStr} />
+          </section>
         </Reveal>
 
         {/* Vibes gallery */}
-        <Reveal>
+        <Reveal className="mt-8 block md:mt-12">
           <section className="space-y-3">
             <h2 className="px-1 text-lg font-extrabold text-[color:var(--color-ink)] md:text-xl">
-              וייבים מהבריכה ☀️
+              וייבים מהבריכה
             </h2>
             <ImageSlider photos={LIFESTYLE_PHOTOS} aspect="16 / 9" />
           </section>
         </Reveal>
 
         {/* Bottom CTA — hidden for logged-in users */}
-        <Reveal>
+        <Reveal className="mt-8 block md:mt-12">
           <PoolBuddiesCTA />
         </Reveal>
 
         {/* Footer */}
-        <footer className="pb-8 text-center text-xs text-[color:var(--color-ink-2)]">
+        <footer className="mt-10 pb-8 text-center text-xs text-[color:var(--color-ink-2)]">
           עודכן{" "}
           {now.toLocaleTimeString("he-IL", {
             hour: "2-digit",

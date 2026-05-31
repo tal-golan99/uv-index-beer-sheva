@@ -75,7 +75,7 @@ export default function DailyChart({ hours }: Props) {
   return (
     <div className="radius-card shadow-pool-md bg-white p-5 ring-1 ring-[color:var(--color-pool-100)]">
       <div className="mb-5">
-        <h2 className="text-lg font-extrabold text-[color:var(--color-ink)] display-title">מדד UV היום</h2>
+        <h2 className="text-lg text-[color:var(--color-ink)] display-title">מדד UV היום</h2>
         <p className="text-xs text-[color:var(--color-ink-2)] mt-0.5">העבירו עליו כדי לראות לפי שעה</p>
       </div>
 

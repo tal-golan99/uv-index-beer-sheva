@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PaperPlaneTilt, Camera, CheckCircle } from "@phosphor-icons/react";
+import Wordmark from "@/components/Wordmark";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 function TelegramIcon() {
@@ -179,11 +181,14 @@ export default function OnboardingPage() {
       {/* Step 1 — Telegram */}
       {step === "telegram" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
+          <div className="flex justify-center">
+            <Wordmark size="sm" />
+          </div>
           <ProgressDots current={0} />
 
           {telegramConnected ? (
             <div className="flex flex-col items-center gap-4 py-4">
-              <div className="text-5xl">✅</div>
+              <CheckCircle weight="fill" size={48} className="text-green-500" aria-hidden />
               <p className="text-center text-lg font-black text-[color:var(--color-ink)]">
                 מחובר לטלגרם!
               </p>
@@ -192,12 +197,14 @@ export default function OnboardingPage() {
           ) : (
             <>
               <div className="text-center">
-                <div className="mx-auto mb-3 text-4xl">✈️</div>
+                <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[color:var(--color-pool-50)]" aria-hidden>
+                  <PaperPlaneTilt weight="duotone" size={30} color="var(--color-pool-600)" />
+                </span>
                 <h2 className="text-xl font-black text-[color:var(--color-ink)]">
                   חבר את טלגרם להתראות UV
                 </h2>
                 <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
-                  כשמדד ה-UV מגיע ל-9 נשלח לך הודעה — שעה לפני ובשיא
+                  כשה-UV נוגע ב-9 תקבל הודעה: שעה לפני, ושוב בשיא.
                 </p>
               </div>
 
@@ -240,7 +247,7 @@ export default function OnboardingPage() {
                 onClick={() => setStep("photo")}
                 className="w-full rounded-xl bg-[color:var(--color-pool-50)] py-2.5 text-sm font-bold text-[color:var(--color-ink-2)] ring-1 ring-[color:var(--color-pool-200)] transition-colors hover:bg-[color:var(--color-pool-100)]"
               >
-                אגדיר אחר כך →
+                אגדיר אחר כך
               </button>
             </>
           )}
@@ -250,15 +257,20 @@ export default function OnboardingPage() {
       {/* Step 2 — Photo */}
       {step === "photo" && (
         <div className="w-full max-w-sm space-y-6 rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-[color:var(--color-pool-100)]">
+          <div className="flex justify-center">
+            <Wordmark size="sm" />
+          </div>
           <ProgressDots current={1} />
 
           <div className="text-center">
-            <div className="mx-auto mb-3 text-4xl">📸</div>
+            <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[color:var(--color-pool-50)]" aria-hidden>
+              <Camera weight="duotone" size={30} color="var(--color-pool-600)" />
+            </span>
             <h2 className="text-xl font-black text-[color:var(--color-ink)]">
               תמונת פרופיל
             </h2>
             <p className="mt-2 text-sm text-[color:var(--color-ink-2)]">
-              {displayName ? `היי ${displayName}! ` : ""}תרצה להוסיף תמונה לפרופיל שלך?
+              {displayName ? `היי ${displayName}! ` : ""}רוצה להוסיף תמונה כדי שיזהו אותך בבריכה?
             </p>
           </div>
 
