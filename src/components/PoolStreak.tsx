@@ -36,6 +36,7 @@ export default function PoolStreak() {
 
   useEffect(() => {
     let cancelled = false;
+    let userId: string | null = null;
 
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -45,6 +46,7 @@ export default function PoolStreak() {
         setLoading(false);
         return;
       }
+      userId = user.id;
       setAuthed(true);
 
       const today = jerusalemToday();
@@ -86,8 +88,24 @@ export default function PoolStreak() {
     }
 
     load();
+
+    // Re-fetch when a new visit is inserted (e.g., right after check-in).
+    const channel = supabase
+      .channel("pool_visits_streak")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pool_visits" },
+        (payload) => {
+          // RLS ensures only own rows are delivered, but double-check anyway.
+          if (userId && payload.new?.user_id !== userId) return;
+          load();
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      channel.unsubscribe();
     };
   }, [supabase]);
 

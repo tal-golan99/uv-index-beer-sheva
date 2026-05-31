@@ -46,11 +46,6 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full opacity-50" style={{ background: "radial-gradient(circle, #fde047 0%, rgba(253,224,71,0) 70%)" }} />
         <div className="pointer-events-none absolute -bottom-10 -left-16 h-64 w-64 rounded-full opacity-40" style={{ background: "radial-gradient(circle, #7dd3fc 0%, rgba(125,211,252,0) 70%)" }} />
 
-        {/* Badge */}
-        <div className="anim-float mb-6 inline-flex items-center gap-2 rounded-full bg-[color:var(--color-pool-100)] px-4 py-2 text-sm font-bold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)]">
-          <span aria-hidden="true">🆕</span> חדש לקיץ 2026
-        </div>
-
         {/* Headline */}
         <h1 className="shimmer-text max-w-xl text-4xl font-black leading-tight sm:text-5xl md:text-6xl">
           האפליקציה היחידה שתצטרכו

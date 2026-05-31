@@ -75,28 +75,26 @@ export async function POST(request: Request) {
     );
   if (visitError) console.error("[checkin] visit log error", { userId: user.id, code: visitError.code, message: visitError.message });
 
-  // Notify others currently at the pool
+  // Notify all Telegram-registered users (except the person checking in)
   try {
-    const { data: others } = await admin
+    const { data: presenceOthers } = await admin
       .from("pool_presence")
       .select("user_id")
       .neq("user_id", user.id);
 
-    if (others && others.length > 0) {
-      const { data: telegramProfiles } = await admin
-        .from("profiles")
-        .select("telegram_chat_id")
-        .in("id", others.map((o) => o.user_id))
-        .not("telegram_chat_id", "is", null);
+    const { data: allTelegramProfiles } = await admin
+      .from("profiles")
+      .select("telegram_chat_id")
+      .neq("id", user.id)
+      .not("telegram_chat_id", "is", null);
 
-      const chatIds = (telegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
-      if (chatIds.length > 0) await notifyPoolEntry(displayName, chatIds);
-    }
+    const chatIds = (allTelegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
+    if (chatIds.length > 0) await notifyPoolEntry(displayName, chatIds);
 
     // Notify the checking-in user themselves as a confirmation
     const selfChatId = profile?.telegram_chat_id as string | null | undefined;
     if (selfChatId) {
-      await notifyCheckinSelf(selfChatId, others?.length ?? 0);
+      await notifyCheckinSelf(selfChatId, presenceOthers?.length ?? 0);
     }
   } catch (err) {
     console.error("[checkin] pool notification error", err);
