@@ -44,12 +44,8 @@ export default function UVStats({ today }: Props) {
   // but as local time in the browser, causing a hydration mismatch.
   const peakTime = peakHour ? peakHour.time.slice(11, 16) : "—";
 
-  // Hours today where UV reaches pool-threshold (≥9) — "intense sun hours"
-  const sunHours = today.hours.filter((h) => h.uv_index >= 9).length;
-  const sunHoursColor = sunHours >= 3 ? "#f97316" : sunHours >= 1 ? "#eab308" : undefined;
-
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <StatCard
         icon="🔆"
         label="UV מקסימום היום"
@@ -57,13 +53,6 @@ export default function UVStats({ today }: Props) {
         color={level.color}
       />
       <StatCard icon="⏰" label="שעת שיא" value={peakTime} />
-      <StatCard
-        icon="🏖️"
-        label="שעות שמש"
-        value={`${sunHours} שעות`}
-        sub="UV גבוה היום"
-        color={sunHoursColor}
-      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { notifyPoolEntry } from "@/lib/notifications";
+import { notifyPoolEntry, notifyCheckinSelf } from "@/lib/notifications";
 
 function getAdmin() {
   return createClient(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   // action === "in" — get display info from profile
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("display_name, avatar_url")
+    .select("display_name, avatar_url, telegram_chat_id")
     .eq("id", user.id)
     .single();
 
@@ -91,6 +91,12 @@ export async function POST(request: Request) {
 
       const chatIds = (telegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
       if (chatIds.length > 0) await notifyPoolEntry(displayName, chatIds);
+    }
+
+    // Notify the checking-in user themselves as a confirmation
+    const selfChatId = profile?.telegram_chat_id as string | null | undefined;
+    if (selfChatId) {
+      await notifyCheckinSelf(selfChatId, others?.length ?? 0);
     }
   } catch (err) {
     console.error("[checkin] pool notification error", err);

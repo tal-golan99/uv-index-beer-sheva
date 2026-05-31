@@ -48,14 +48,12 @@ export default function LandingPage() {
 
         {/* Badge */}
         <div className="anim-float mb-6 inline-flex items-center gap-2 rounded-full bg-[color:var(--color-pool-100)] px-4 py-2 text-sm font-bold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)]">
-          <span aria-hidden="true">🆕</span> חדש לקיץ 2025
+          <span aria-hidden="true">🆕</span> חדש לקיץ 2026
         </div>
 
         {/* Headline */}
-        <h1 className="max-w-xl text-4xl font-black leading-tight text-[color:var(--color-ink)] sm:text-5xl md:text-6xl">
-          האפליקציה{" "}
-          <span className="shimmer-text">היחידה</span>
-          {" "}שתצטרכו
+        <h1 className="shimmer-text max-w-xl text-4xl font-black leading-tight sm:text-5xl md:text-6xl">
+          האפליקציה היחידה שתצטרכו
           <br />
           לקיץ הקרוב
         </h1>
@@ -77,7 +75,6 @@ export default function LandingPage() {
           >
             🏊 לקפוץ למים
           </Link>
-          <p className="text-sm text-[color:var(--color-ink-3)] font-semibold">בחינם לגמרי · ללא רישום</p>
         </div>
 
         {/* Floating sun */}

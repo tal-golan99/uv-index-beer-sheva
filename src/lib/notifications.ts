@@ -43,6 +43,17 @@ export async function notifyPoolEntry(
   await Promise.allSettled(chatIds.map((id) => sendTelegram(id, text)));
 }
 
+export async function notifyCheckinSelf(
+  chatId: string,
+  othersCount: number
+): Promise<void> {
+  const text =
+    othersCount > 0
+      ? `נכנסת לבריכה! ☀️ יש ${othersCount} חברים בפנים עכשיו 🏊`
+      : `נכנסת לבריכה! ☀️ אתה ראשון בפנים 🏊`;
+  await sendTelegram(chatId, text);
+}
+
 async function sendTelegram(chatId: string, text: string): Promise<void> {
   const res = await fetch(
     `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
