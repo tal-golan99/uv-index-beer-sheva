@@ -107,9 +107,10 @@ export default function UVGauge({ value }: Props) {
         style={{ ["--aura" as string]: hexToRgba(level.color, 0.5) }}
       />
 
+      <div className="relative w-full max-w-xs">
       <svg
         viewBox="0 0 200 118"
-        className="relative w-full max-w-xs"
+        className="w-full"
         role="img"
         aria-label={`UV index ${value}`}
       >
@@ -142,10 +143,6 @@ export default function UVGauge({ value }: Props) {
             </feMerge>
           </filter>
 
-          {/* clipPath must live in defs so the browser resolves the reference regardless of paint order */}
-          <clipPath id="yuviClip">
-            <circle cx={dot.x} cy={dot.y} r={AV_R} />
-          </clipPath>
         </defs>
 
         <path d={ARC} fill="none" stroke="url(#trackGrad)" strokeWidth="10" strokeLinecap="round" />
@@ -185,18 +182,8 @@ export default function UVGauge({ value }: Props) {
           );
         })}
 
-        {/* Needle tip: a circular photo of the chosen Yuvi, ringed in the
-            current severity colour so the level cue survives. */}
+        {/* Colour ring at needle tip */}
         <circle cx={dot.x} cy={dot.y} r={AV_R + 2} fill={level.color} filter="url(#glow)" />
-        <image
-          href={`/yuvi/${gender}.png`}
-          x={dot.x - AV_R}
-          y={dot.y - AV_R}
-          width={AV_R * 2}
-          height={AV_R * 2}
-          clipPath="url(#yuviClip)"
-          preserveAspectRatio="xMidYMid slice"
-        />
         <circle cx={dot.x} cy={dot.y} r={AV_R} fill="none" stroke="white" strokeWidth="1.5" />
 
         <text x={CX} y={CY - 18} textAnchor="middle" fill="#0c1b29" fontSize="38" fontWeight="800" fontFamily="system-ui">
@@ -206,6 +193,25 @@ export default function UVGauge({ value }: Props) {
           מדד UV
         </text>
       </svg>
+
+      {/* HTML img is far more reliable than SVG <image> on mobile/iOS */}
+      <img
+        src={`/yuvi/${gender}.png`}
+        alt=""
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: `${(dot.x / 200) * 100}%`,
+          top: `${(dot.y / 118) * 100}%`,
+          transform: "translate(-50%, -50%)",
+          width: `${(AV_R * 2 / 200) * 100}%`,
+          aspectRatio: "1",
+          borderRadius: "50%",
+          objectFit: "cover",
+          pointerEvents: "none",
+        }}
+      />
+      </div>
 
       {/* level badge */}
       <div
