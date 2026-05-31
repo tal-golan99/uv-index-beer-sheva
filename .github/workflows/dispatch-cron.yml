@@ -2,7 +2,7 @@ name: UV Alert Dispatch
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/30 5-14 * * *'
   workflow_dispatch:
 
 jobs:

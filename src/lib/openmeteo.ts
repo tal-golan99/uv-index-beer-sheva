@@ -46,10 +46,11 @@ async function fetchOpenMeteoRaw(): Promise<{ week: DailyUV[]; current: number }
     hours:  byDay.get(date) ?? [],
   }));
 
-  const now = new Date();
-  const currentHour = pairs.findLast(
-    (p) => new Date(p.time).getTime() <= now.getTime()
-  );
+  const nowStr = new Date()
+    .toLocaleString("sv-SE", { timeZone: TIMEZONE })
+    .slice(0, 16)
+    .replace(" ", "T");
+  const currentHour = pairs.findLast((p) => p.time <= nowStr);
 
   return { week, current: currentHour?.uv_index ?? 0 };
 }

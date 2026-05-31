@@ -67,8 +67,8 @@ body.pool-time {
   50%      { transform: translateY(-7px) rotate(2deg); }
 }
 @keyframes drift {
-  from { transform: translateX(0); }
-  to   { transform: translateX(40px); }
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(40px); }
 }
 @keyframes sun-pulse {
   0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 18px rgba(250,204,21,0.55)); }
@@ -96,6 +96,7 @@ body.pool-time {
 .anim-sun     { animation: sun-pulse 4s ease-in-out infinite; }
 .anim-pop     { animation: pop-in 0.6s cubic-bezier(.34,1.56,.64,1) both; }
 .anim-rise    { animation: rise-in 0.5s ease both; }
+.anim-drift   { animation: drift 6s ease-in-out infinite; }
 
 /* Shimmering gradient text (used for the giant "מהר לבריכה" title) */
 .shimmer-text {
@@ -105,6 +106,18 @@ body.pool-time {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: shimmer 4s linear infinite;
+}
+
+/* Primary CTA button — shadow lifts on hover */
+.cta-btn {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.cta-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 24px 48px -6px rgba(2, 132, 199, 0.85) !important;
+}
+.cta-btn:active {
+  transform: scale(0.96);
 }
 
 /* Soft, very slow light sweep — a calm sheen, not a flicker */
@@ -138,13 +151,16 @@ body.pool-time {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-float, .anim-bob, .anim-sun, .anim-pop, .anim-rise,
+  .anim-float, .anim-bob, .anim-sun, .anim-pop, .anim-rise, .anim-drift,
   .shimmer-text, .water-sheen::after {
     animation: none !important;
   }
   .reveal {
     opacity: 1 !important;
     transform: none !important;
+    transition: none !important;
+  }
+  .cta-btn {
     transition: none !important;
   }
 }

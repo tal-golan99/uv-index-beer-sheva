@@ -75,11 +75,11 @@ export default function DailyChart({ hours }: Props) {
   return (
     <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
       <div className="mb-5">
-        <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">מדד UV היום</h2>
+        <h2 className="text-lg font-extrabold text-[color:var(--color-ink)]">מדד UV היום</h2>
         <p className="text-xs text-[color:var(--color-ink-3)] mt-0.5">העבירו עליו כדי לראות לפי שעה</p>
       </div>
 
-      <div style={{ touchAction: "none" }}>
+      <div style={{ touchAction: "pan-y" }}>
       {!mounted ? (
         <div style={{ height: 200 }} className="animate-pulse rounded-xl bg-[color:var(--color-pool-50)]" />
       ) : (

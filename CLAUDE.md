@@ -27,7 +27,7 @@ No test framework is configured yet.
 
 `vercel.json` registers two cron schedules for `/api/cron/check`:
 - `0 7 * * *` — morning seed: fetches today's forecast, finds first hour where UV ≥ 9, writes a row to `daily_alerts` with `warn_at` (threshold − 1h) and `threshold_at`.
-- `*/30 * * * *` — dispatch: reads unsent `daily_alerts` where `warn_at ≤ now+35min`, sends WhatsApp via CallMeBot, then marks each field sent. Triggered externally via cron-job.org (Vercel Hobby plan only supports daily crons).
+- `*/30 8-16 * * *` — dispatch: reads unsent `daily_alerts` where `warn_at ≤ now+35min`, sends WhatsApp/Telegram notifications, then marks each field sent. Triggered externally via cron-job.org and GitHub Actions (`*/30 5-14 * * *` UTC). Restricted to 08:00–17:00 Israel time (enforced both by the cron schedule and by a time gate inside the route using `Intl.DateTimeFormat` with `Asia/Jerusalem`).
 
 The cron endpoint requires `Authorization: Bearer <CRON_SECRET>` — Vercel injects this automatically; for local testing pass it manually.
 

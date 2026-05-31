@@ -20,16 +20,27 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
-  const isEarlyMorning = now.getHours() < 9; // seed phase
+  const isEarlyMorning = now.getHours() < 9; // seed phase (UTC, matches Vercel 0 7 * * * trigger)
+
+  const israelHour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Jerusalem",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(now)
+  );
+  const isDispatchHour = israelHour >= 8 && israelHour < 17;
 
   try {
     if (isEarlyMorning) {
       await seedTodayAlert(todayStr);
     }
 
-    await dispatchPendingAlerts(now);
+    if (isDispatchHour) {
+      await dispatchPendingAlerts(now);
+    }
 
-    return NextResponse.json({ ok: true, ts: now.toISOString() });
+    return NextResponse.json({ ok: true, ts: now.toISOString(), israelHour });
   } catch (err) {
     console.error("Cron error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { notifyPoolEntry } from "@/lib/notifications";
 
 function getAdmin() {
   return createClient(
@@ -73,6 +74,27 @@ export async function POST(request: Request) {
       { onConflict: "user_id,visit_date", ignoreDuplicates: true }
     );
   if (visitError) console.error("[checkin] visit log error", { userId: user.id, code: visitError.code, message: visitError.message });
+
+  // Notify others currently at the pool
+  try {
+    const { data: others } = await admin
+      .from("pool_presence")
+      .select("user_id")
+      .neq("user_id", user.id);
+
+    if (others && others.length > 0) {
+      const { data: telegramProfiles } = await admin
+        .from("profiles")
+        .select("telegram_chat_id")
+        .in("id", others.map((o) => o.user_id))
+        .not("telegram_chat_id", "is", null);
+
+      const chatIds = (telegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
+      if (chatIds.length > 0) await notifyPoolEntry(displayName, chatIds);
+    }
+  } catch (err) {
+    console.error("[checkin] pool notification error", err);
+  }
 
   return NextResponse.json({ ok: true, action: "in" });
 }

@@ -35,6 +35,14 @@ function buildMessage(payload: AlertPayload): string {
   return `קרינת ה-UV בבאר שבע הגיעה ל-${payload.uvValue} ב-${time}. מומלץ להישאר בצל, להשתמש בקרם הגנה SPF 50+ ולחבוש כובע.`;
 }
 
+export async function notifyPoolEntry(
+  entrantName: string,
+  chatIds: string[]
+): Promise<void> {
+  const text = `${entrantName} נכנס לבריכה, מה אתה עדיין לומד? תחליף זריז לבגד ים ותצטרף 🏊`;
+  await Promise.allSettled(chatIds.map((id) => sendTelegram(id, text)));
+}
+
 async function sendTelegram(chatId: string, text: string): Promise<void> {
   const res = await fetch(
     `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,

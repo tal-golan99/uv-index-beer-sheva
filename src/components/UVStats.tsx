@@ -39,15 +39,14 @@ export default function UVStats({ today }: Props) {
     (best, h) => (h.uv_index > best.uv_index ? h : best),
     today.hours[0]
   );
-  const peakTime = peakHour
-    ? new Date(peakHour.time).toLocaleTimeString("he-IL", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Asia/Jerusalem",
-      })
-    : "—";
+  // Slice directly from the ISO string (YYYY-MM-DDTHH:mm:ss) — already Jerusalem-local
+  // time from Open-Meteo. Using new Date() here would parse as UTC on Node.js (server)
+  // but as local time in the browser, causing a hydration mismatch.
+  const peakTime = peakHour ? peakHour.time.slice(11, 16) : "—";
 
-  const sunnyHours = today.hours.filter((h) => h.uv_index >= 3).length;
+  // Hours today where UV reaches pool-threshold (≥9) — "intense sun hours"
+  const sunHours = today.hours.filter((h) => h.uv_index >= 9).length;
+  const sunHoursColor = sunHours >= 3 ? "#f97316" : sunHours >= 1 ? "#eab308" : undefined;
 
   return (
     <div className="grid grid-cols-3 gap-3">
@@ -61,8 +60,9 @@ export default function UVStats({ today }: Props) {
       <StatCard
         icon="🏖️"
         label="שעות שמש"
-        value={`${sunnyHours}`}
-        sub="בסה״כ היום"
+        value={`${sunHours} שעות`}
+        sub="UV גבוה היום"
+        color={sunHoursColor}
       />
     </div>
   );

@@ -38,9 +38,9 @@ export default async function HomePage() {
     <div className="relative min-h-screen">
       <BodyTheme poolTime={poolTime} />
 
-      {/* Decorative drifting sun */}
+      {/* Decorative sun blob — centered to match the background gradient's 50% -10% radial */}
       <div
-        className="anim-sun pointer-events-none fixed -top-10 -left-10 z-0 h-40 w-40 rounded-full opacity-70"
+        className="anim-sun pointer-events-none fixed -top-10 left-1/2 -translate-x-1/2 z-0 h-40 w-40 rounded-full opacity-70"
         style={{ background: "radial-gradient(circle, #fde047 0%, rgba(253,224,71,0) 70%)" }}
         aria-hidden
       />
@@ -53,12 +53,15 @@ export default async function HomePage() {
         {/* Personal "days since last pool visit" + last-7-days squares (logged-in only) */}
         <PoolStreak />
 
+        {/* Screen-reader page title (city h2 is not the primary topic) */}
+        <h1 className="sr-only">בריכה עכשיו — UV Tracker</h1>
+
         {/* Header: location + big auth button */}
         <header className="flex items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl md:text-2xl">📍</span>
-              <h1 className="text-xl font-extrabold text-[color:var(--color-ink)] md:text-2xl">באר שבע</h1>
+              <h2 className="text-xl font-extrabold text-[color:var(--color-ink)] md:text-2xl">באר שבע</h2>
             </div>
             <p className="mt-0.5 mr-8 text-xs text-[color:var(--color-ink-3)] md:text-sm">{dateLabel}</p>
           </div>
@@ -85,7 +88,7 @@ export default async function HomePage() {
 
         {/* Who's at the pool now — social centerpiece */}
         <Reveal>
-          <PoolPresence />
+          <PoolPresence currentUV={forecast.current} />
         </Reveal>
 
         {/* Weekly forecast — its own row, below the pool */}
@@ -114,7 +117,7 @@ export default async function HomePage() {
         </Reveal>
 
         {/* Footer */}
-        <p className="pb-8 text-center text-xs text-[color:var(--color-ink-3)]">
+        <footer className="pb-8 text-center text-xs text-[color:var(--color-ink-3)]">
           עודכן{" "}
           {now.toLocaleTimeString("he-IL", {
             hour: "2-digit",
@@ -123,7 +126,7 @@ export default async function HomePage() {
           })}
           {" · "}
           <span className="opacity-70">מקור: Open-Meteo</span>
-        </p>
+        </footer>
       </div>
     </div>
   );

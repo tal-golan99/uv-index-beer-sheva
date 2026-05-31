@@ -74,7 +74,7 @@ function SwimmerPin({
   );
 }
 
-export default function PoolPresence() {
+export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) {
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const [swimmers, setSwimmers] = useState<PoolPresenceEntry[]>([]);
   const [user, setUser] = useState<User | null>(null);
@@ -245,16 +245,26 @@ export default function PoolPresence() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-4 rounded-3xl bg-white px-5 py-7 text-center ring-1 ring-[color:var(--color-pool-200)] shadow-sm">
+          <div
+            className="flex flex-col items-center gap-4 rounded-3xl px-5 py-7 text-center ring-1 shadow-sm"
+            style={{
+              background: currentUV >= 7
+                ? "linear-gradient(135deg, #fef9c3 0%, #e0f2fe 100%)"
+                : "white",
+              borderColor: "var(--color-pool-200)",
+            }}
+          >
             <p className="text-3xl font-black leading-tight text-[color:var(--color-ink)] sm:text-4xl md:text-5xl">
-              אל תהיה לוזר,
-              <br />
-              לך לבריכה 🥲
+              {currentUV < 4 ? (
+                <>הבריכה מחכה לך 🏊</>
+              ) : (
+                <>אל תהיה לוזר,<br />לך לבריכה 🥲</>
+              )}
             </p>
             <button
               onClick={toggleCheckin}
               disabled={checking}
-              className="rounded-2xl px-8 py-4 text-lg font-extrabold text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+              className={`rounded-2xl px-8 py-4 text-lg font-extrabold text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-50${currentUV >= 7 ? " anim-sun" : ""}`}
               style={{
                 background: "linear-gradient(90deg, var(--color-pool-500), var(--color-pool-400))",
                 boxShadow: "0 12px 28px -8px rgba(14,165,233,0.75)",

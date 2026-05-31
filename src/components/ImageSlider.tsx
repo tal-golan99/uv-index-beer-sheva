@@ -86,16 +86,20 @@ export default function ImageSlider({
           <button
             onClick={() => go(-1)}
             aria-label="הקודם"
-            className="absolute top-1/2 right-2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-[color:var(--color-ink)] backdrop-blur transition-transform hover:scale-110 active:scale-95"
+            className="absolute top-1/2 right-2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/80 text-[color:var(--color-ink)] backdrop-blur transition-transform hover:scale-110 active:scale-95"
           >
-            ›
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+              <path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
           <button
             onClick={() => go(1)}
             aria-label="הבא"
-            className="absolute top-1/2 left-2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-[color:var(--color-ink)] backdrop-blur transition-transform hover:scale-110 active:scale-95"
+            className="absolute top-1/2 left-2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/80 text-[color:var(--color-ink)] backdrop-blur transition-transform hover:scale-110 active:scale-95"
           >
-            ‹
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+              <path d="M12 5l-5 5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
 
           {/* dots */}
@@ -108,7 +112,7 @@ export default function ImageSlider({
                 className="h-2 rounded-full transition-all"
                 style={{
                   width: idx === i ? 18 : 8,
-                  background: idx === i ? "#fff" : "rgba(255,255,255,0.55)",
+                  background: idx === i ? "var(--color-pool-400)" : "rgba(255,255,255,0.6)",
                 }}
               />
             ))}

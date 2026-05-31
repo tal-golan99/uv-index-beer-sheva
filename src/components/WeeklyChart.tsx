@@ -12,10 +12,9 @@ interface Props {
 function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
   const level = getUVLevel(day.max_uv);
   const barPct = Math.min(day.max_uv / 11, 1) * 100;
-  const dateLabel = new Date(day.date + "T12:00:00").toLocaleDateString("he-IL", {
-    day: "numeric",
-    month: "numeric",
-  });
+  // Slice directly from YYYY-MM-DD to get zero-padded "DD/MM" — avoids locale
+  // ambiguity where he-IL renders "31.5" which looks like a UV value.
+  const dateLabel = `${day.date.slice(8, 10)}/${day.date.slice(5, 7)}`;
 
   return (
     <div
@@ -43,14 +42,17 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
         {day.max_uv.toFixed(1)}
       </p>
 
-      {isToday && (
-        <span
-          className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-          style={{ background: level.color }}
-        >
-          היום
-        </span>
-      )}
+      {/* Reserve fixed height so all cards stay the same height regardless of badge */}
+      <div className="h-5 flex items-center justify-center">
+        {isToday && (
+          <span
+            className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
+            style={{ background: level.color }}
+          >
+            היום
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -58,7 +60,7 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
 export default function WeeklyChart({ week, today }: Props) {
   return (
     <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
-      <h2 className="text-base font-extrabold text-[color:var(--color-ink)] mb-4">תחזית שבועית</h2>
+      <h2 className="text-lg font-extrabold text-[color:var(--color-ink)] mb-4">תחזית שבועית</h2>
       <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" style={{ touchAction: "pan-x" }}>
         {week.map((day) => (
           <DayCard key={day.date} day={day} isToday={day.date === today} />

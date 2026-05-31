@@ -91,10 +91,30 @@ export default function PoolStreak() {
     };
   }, [supabase]);
 
-  // Hidden entirely for logged-out users and while we don't yet know.
-  if (loading || !authed) return null;
+  // Hidden entirely for logged-out users.
+  if (!loading && !authed) return null;
 
   const overdue = daysSince !== null && daysSince > 5;
+  const todayStr = loading ? "" : jerusalemToday();
+
+  // Skeleton while auth + data load
+  if (loading) {
+    return (
+      <section className="space-y-3">
+        <div className="animate-pulse rounded-3xl bg-white px-5 py-4 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+          <div className="mx-auto h-4 w-48 rounded-full bg-slate-200" />
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-1.5">
+              <div className="animate-pulse aspect-square w-full rounded-lg bg-slate-200" />
+              <div className="h-2.5 w-5 animate-pulse rounded bg-slate-200" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3">
@@ -125,19 +145,30 @@ export default function PoolStreak() {
 
       {/* Last 7 days squares + DD/MM labels */}
       <div className="grid grid-cols-7 gap-2">
-        {days.map((d) => (
-          <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
-            <div
-              className={`aspect-square w-full rounded-lg ${
-                d.visited ? "bg-[color:var(--color-pool-500)]" : "bg-slate-200"
-              }`}
-              title={d.ddmm}
-            />
-            <span className="text-[10px] font-semibold text-[color:var(--color-ink-3)] sm:text-xs">
-              {d.ddmm}
-            </span>
-          </div>
-        ))}
+        {days.map((d) => {
+          const isToday = d.dateStr === todayStr;
+          return (
+            <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
+              <div
+                className={[
+                  "relative aspect-square w-full rounded-lg grid place-items-center",
+                  d.visited
+                    ? "bg-[color:var(--color-pool-500)]"
+                    : "border-2 border-dashed border-slate-300 bg-transparent",
+                  isToday ? "ring-2 ring-[color:var(--color-pool-400)] ring-offset-1" : "",
+                ].join(" ")}
+                title={d.ddmm}
+              >
+                {d.visited && (
+                  <span className="text-xs text-white leading-none select-none">🏊</span>
+                )}
+              </div>
+              <span className="text-[10px] font-semibold text-[color:var(--color-ink-3)] sm:text-xs">
+                {d.ddmm}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

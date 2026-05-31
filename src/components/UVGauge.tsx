@@ -37,6 +37,7 @@ export default function UVGauge({ value }: Props) {
       <svg
         viewBox="0 0 200 110"
         className="w-full max-w-xs"
+        role="img"
         aria-label={`UV index ${value}`}
       >
         <defs>
