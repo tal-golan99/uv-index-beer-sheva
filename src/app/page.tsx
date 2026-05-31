@@ -5,6 +5,7 @@ import { LIFESTYLE_PHOTOS } from "@/lib/photos";
 import BodyTheme from "@/components/BodyTheme";
 import Reveal from "@/components/Reveal";
 import RotatingBanner from "@/components/RotatingBanner";
+import PoolStreak from "@/components/PoolStreak";
 import PoolTimeHero from "@/components/PoolTimeHero";
 import PoolPresence from "@/components/PoolPresence";
 import ImageSlider from "@/components/ImageSlider";
@@ -29,6 +30,9 @@ export default async function HomePage() {
     month: "long",
     timeZone: "Asia/Jerusalem",
   });
+  // Israel-local date (YYYY-MM-DD), computed server-side so the weekly chart's
+  // "today" highlight is identical on server and client (no hydration mismatch).
+  const todayStr = now.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 
   return (
     <div className="relative min-h-screen">
@@ -45,6 +49,9 @@ export default async function HomePage() {
 
         {/* Rotating daily banner */}
         <RotatingBanner sentence={banner} />
+
+        {/* Personal "days since last pool visit" + last-7-days squares (logged-in only) */}
+        <PoolStreak />
 
         {/* Header: location + big auth button */}
         <header className="flex items-center justify-between gap-3">
@@ -83,7 +90,7 @@ export default async function HomePage() {
 
         {/* Weekly forecast — its own row, below the pool */}
         <Reveal>
-          <WeeklyChart week={forecast.week} />
+          <WeeklyChart week={forecast.week} today={todayStr} />
         </Reveal>
 
         {/* Quick stats */}

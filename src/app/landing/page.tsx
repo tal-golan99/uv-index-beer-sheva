@@ -30,7 +30,7 @@ export default function LandingPage() {
           <span className="text-xs font-bold text-white bg-[color:var(--color-pool-500)] px-2 py-0.5 rounded-full">באר שבע</span>
         </div>
         <Link
-          href="/"
+          href="/register"
           className="rounded-2xl px-5 py-2.5 text-sm font-extrabold text-white transition-transform hover:scale-105 active:scale-95"
           style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
         >
@@ -65,7 +65,7 @@ export default function LandingPage() {
         {/* CTA */}
         <div className="mt-10 flex flex-col items-center gap-3">
           <Link
-            href="/"
+            href="/register"
             className="rounded-2xl px-10 py-5 text-xl font-extrabold text-white transition-transform hover:scale-105 active:scale-95"
             style={{
               background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",
@@ -149,7 +149,7 @@ export default function LandingPage() {
             מומלץ על ידי 9 מתוך 10 רופאי עור שגם הולכים לבריכה
           </p>
           <Link
-            href="/"
+            href="/register"
             className="mt-8 inline-block rounded-2xl bg-white px-8 py-4 text-base font-extrabold text-[color:var(--color-pool-700)] transition-transform hover:scale-105 active:scale-95 shadow-lg"
           >
             מוכן לקפוץ? →
@@ -190,7 +190,7 @@ export default function LandingPage() {
           הבריכה לא תחכה לכם
         </h2>
         <Link
-          href="/"
+          href="/register"
           className="inline-block rounded-2xl px-12 py-5 text-xl font-extrabold text-white transition-transform hover:scale-105 active:scale-95"
           style={{
             background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",

@@ -5,6 +5,8 @@ import type { DailyUV } from "@/types";
 
 interface Props {
   week: DailyUV[];
+  /** Israel-local date (YYYY-MM-DD), passed from the server to avoid hydration drift. */
+  today: string;
 }
 
 function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
@@ -17,9 +19,8 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
 
   return (
     <div
-      className="flex-shrink-0 flex flex-col items-center gap-2 rounded-2xl p-4 transition-all duration-200 hover:scale-[1.03] cursor-default bg-white"
+      className="flex-shrink-0 sm:flex-1 min-w-[84px] flex flex-col items-center gap-2 rounded-2xl p-4 transition-all duration-200 hover:scale-[1.03] cursor-default bg-white"
       style={{
-        minWidth: "84px",
         border: `1px solid ${isToday ? level.color : "var(--color-pool-100)"}`,
         boxShadow: isToday
           ? `0 10px 24px -10px ${level.color}`
@@ -54,15 +55,13 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
   );
 }
 
-export default function WeeklyChart({ week }: Props) {
-  const todayStr = new Date().toISOString().slice(0, 10);
-
+export default function WeeklyChart({ week, today }: Props) {
   return (
     <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
       <h2 className="text-base font-extrabold text-[color:var(--color-ink)] mb-4">תחזית שבועית</h2>
       <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" style={{ touchAction: "pan-x" }}>
         {week.map((day) => (
-          <DayCard key={day.date} day={day} isToday={day.date === todayStr} />
+          <DayCard key={day.date} day={day} isToday={day.date === today} />
         ))}
       </div>
     </div>

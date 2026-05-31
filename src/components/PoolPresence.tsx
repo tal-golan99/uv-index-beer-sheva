@@ -7,6 +7,11 @@ import { POOL_IMAGE } from "@/lib/photos";
 import type { PoolPresenceEntry } from "@/types";
 import type { User } from "@supabase/supabase-js";
 
+// A swimmer is auto-removed 4 hours after check-in. The DB cleanup (pg_cron +
+// the check-in API) enforces this server-side; this is the client-side mirror so
+// the UI never shows a stale swimmer for more than the 60s tick interval below.
+const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+
 // Deterministic position from user_id so each swimmer always lands in the same spot
 function positionFor(userId: string): { top: number; left: number } {
   let h = 0;
@@ -75,6 +80,10 @@ export default function PoolPresence() {
   const [user, setUser] = useState<User | null>(null);
   const [inPool, setInPool] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
+  // Bumped every 60s so stale swimmers (>4h) drop out of the UI even without a
+  // DB change to trigger a realtime refetch.
+  const [tick, setTick] = useState(0);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Load initial data and subscribe to realtime
@@ -86,7 +95,8 @@ export default function PoolPresence() {
       .from("pool_presence")
       .select("*")
       .order("checked_in_at")
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error("[pool_presence] initial fetch error", error.code, error.message);
         if (data) setSwimmers(data as PoolPresenceEntry[]);
       });
 
@@ -102,7 +112,8 @@ export default function PoolPresence() {
             .from("pool_presence")
             .select("*")
             .order("checked_in_at")
-            .then(({ data }) => {
+            .then(({ data, error }) => {
+              if (error) console.error("[pool_presence] realtime refetch error", error.code, error.message);
               if (data) setSwimmers(data as PoolPresenceEntry[]);
             });
         }
@@ -115,29 +126,60 @@ export default function PoolPresence() {
     };
   }, [supabase]);
 
-  // Sync inPool state with swimmers list
+  // Re-evaluate the 4h staleness filter once a minute.
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Only show swimmers checked in within the last 4 hours. The DB cleanup removes
+  // them server-side; this guards the window between cleanups.
+  const visibleSwimmers = useMemo(
+    () =>
+      swimmers.filter(
+        (s) => Date.now() - new Date(s.checked_in_at).getTime() < FOUR_HOURS_MS
+      ),
+    // `tick` (every 60s) re-evaluates the time-based filter as swimmers age out.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [swimmers, tick]
+  );
+
+  // Sync inPool state with the visible swimmers list
   useEffect(() => {
     if (user) {
-      setInPool(swimmers.some((s) => s.user_id === user.id));
+      setInPool(visibleSwimmers.some((s) => s.user_id === user.id));
     }
-  }, [swimmers, user]);
+  }, [visibleSwimmers, user]);
 
   async function toggleCheckin() {
     if (!user) return;
     setChecking(true);
+    setError("");
     try {
       const res = await fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: inPool ? "out" : "in" }),
       });
-      if (res.ok) {
-        const { data } = await supabase
-          .from("pool_presence")
-          .select("*")
-          .order("checked_in_at");
-        if (data) setSwimmers(data as PoolPresenceEntry[]);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("[checkin] request failed", res.status, body);
+        setError("לא הצלחנו לעדכן. נסה שוב.");
+        return;
       }
+      const { data, error: selError } = await supabase
+        .from("pool_presence")
+        .select("*")
+        .order("checked_in_at");
+      if (selError) {
+        console.error("[checkin] refetch error", selError.code, selError.message);
+        setError("העדכון נשמר אך לא הצלחנו לרענן את הבריכה.");
+        return;
+      }
+      if (data) setSwimmers(data as PoolPresenceEntry[]);
+    } catch (err) {
+      console.error("[checkin] network error", err);
+      setError("שגיאת רשת. נסה שוב.");
     } finally {
       setChecking(false);
     }
@@ -150,7 +192,7 @@ export default function PoolPresence() {
           מי בבריכה עכשיו
         </h2>
         <span className="rounded-full bg-[color:var(--color-pool-100)] px-3 py-1 text-xs font-bold text-[color:var(--color-pool-600)] sm:text-sm">
-          {swimmers.length} בפנים 🌊
+          {visibleSwimmers.length} בפנים 🌊
         </span>
       </div>
 
@@ -169,7 +211,7 @@ export default function PoolPresence() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0ea5e9]/25 via-[#0ea5e9]/10 to-[#0369a1]/35" />
 
-        {swimmers.map((s, i) => (
+        {visibleSwimmers.map((s, i) => (
           <SwimmerPin
             key={s.user_id}
             entry={s}
@@ -178,7 +220,7 @@ export default function PoolPresence() {
           />
         ))}
 
-        {swimmers.length === 0 && (
+        {visibleSwimmers.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="rounded-2xl bg-white/80 px-5 py-3 text-sm font-bold text-[color:var(--color-ink-2)] backdrop-blur-sm">
               אף אחד בבריכה עדיין 😴
@@ -235,6 +277,15 @@ export default function PoolPresence() {
             התחבר עם Google
           </a>
         </div>
+      )}
+
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600 ring-1 ring-red-200"
+        >
+          {error}
+        </p>
       )}
     </section>
   );

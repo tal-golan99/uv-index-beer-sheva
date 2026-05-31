@@ -170,6 +170,13 @@ export default function AccountPage() {
   }
 
   async function signOut() {
+    // Remove the user from the pool first — after signOut the request would be
+    // unauthorized. Best-effort: never block logout on this.
+    await fetch("/api/checkin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "out" }),
+    }).catch(() => {});
     await supabase.auth.signOut();
     router.replace("/");
   }

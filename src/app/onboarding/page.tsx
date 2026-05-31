@@ -47,7 +47,7 @@ export default function OnboardingPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/register");
         return;
@@ -55,6 +55,17 @@ export default function OnboardingPage() {
       const meta = user.user_metadata ?? {};
       setDisplayName(meta.full_name ?? meta.name ?? null);
       setGoogleAvatar(meta.avatar_url ?? meta.picture ?? null);
+
+      // Returning from the Telegram bot's "complete sign-up" link → jump to photo step
+      const stepParam = new URLSearchParams(window.location.search).get("step");
+      if (stepParam === "photo") {
+        const res = await fetch("/api/telegram/status").catch(() => null);
+        if (res?.ok) {
+          const { connected } = await res.json();
+          setTelegramConnected(connected);
+        }
+        setStep("photo");
+      }
     });
   }, [supabase, router]);
 

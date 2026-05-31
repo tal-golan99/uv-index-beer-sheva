@@ -18,6 +18,16 @@ export async function POST(request: Request) {
   const { action } = await request.json();
   const admin = getAdmin();
 
+  // Keep the table tidy: drop anyone checked in more than 4 hours ago. The
+  // pg_cron job does this server-side every 5 min; doing it here too means user
+  // activity also cleans up stale rows between ticks.
+  const staleCutoff = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+  const { error: staleError } = await admin
+    .from("pool_presence")
+    .delete()
+    .lt("checked_in_at", staleCutoff);
+  if (staleError) console.error("[checkin] stale cleanup error", { code: staleError.code, message: staleError.message });
+
   if (action === "out") {
     const { error: delError } = await admin.from("pool_presence").delete().eq("user_id", user.id);
     if (delError) console.error("[checkin] delete error", { userId: user.id, code: delError.code, message: delError.message });
@@ -52,5 +62,17 @@ export async function POST(request: Request) {
     console.error("[checkin] upsert error", { userId: user.id, code: error.code, message: error.message, details: error.details, hint: error.hint });
     return NextResponse.json({ error: "שגיאה. נסה שוב." }, { status: 500 });
   }
+
+  // Record today's visit in history (Asia/Jerusalem date). Ignore if already logged today.
+  // A failure here must not break check-in, so we only log it.
+  const visitDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const { error: visitError } = await admin
+    .from("pool_visits")
+    .upsert(
+      { user_id: user.id, visit_date: visitDate },
+      { onConflict: "user_id,visit_date", ignoreDuplicates: true }
+    );
+  if (visitError) console.error("[checkin] visit log error", { userId: user.id, code: visitError.code, message: visitError.message });
+
   return NextResponse.json({ ok: true, action: "in" });
 }

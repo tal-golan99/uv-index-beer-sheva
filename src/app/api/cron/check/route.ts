@@ -8,6 +8,8 @@ import {
 } from "@/lib/supabase";
 import { notifySubscribers } from "@/lib/notifications";
 
+export const dynamic = "force-dynamic";
+
 const THRESHOLD = 9;
 
 export async function GET(req: NextRequest) {

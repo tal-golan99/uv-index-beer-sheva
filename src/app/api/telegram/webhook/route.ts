@@ -8,13 +8,13 @@ function getAdmin() {
   );
 }
 
-async function sendMessage(chatId: string | number, text: string) {
+async function sendMessage(chatId: string | number, text: string, replyMarkup?: unknown) {
   await fetch(
     `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify({ chat_id: chatId, text, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) }),
     }
   );
 }
@@ -65,7 +65,14 @@ export async function POST(req: NextRequest) {
     await admin.from("profiles").update({ telegram_chat_id: chatId }).eq("id", row.user_id);
     await admin.from("pending_telegram_tokens").delete().eq("token", token);
 
-    await sendMessage(chatId, "מחובר! 🎉 תחזור לאפליקציה — תקבל התראות UV כשהשמש חזקה מדי 🌞");
+    const photoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?step=photo`;
+    await sendMessage(
+      chatId,
+      "מעולה! 🎉 נרשמת בהצלחה להתראות ה-UV.\n" +
+        "מעכשיו נשלח לך התראה כשהשמש חזקה מדי — שעה לפני השיא ובשיא עצמו ☀️\n\n" +
+        "נשאר רק צעד אחד: בוא נבחר תמונת פרופיל ונסיים את ההרשמה 👇",
+      { inline_keyboard: [[{ text: "🏊 השלם הרשמה ובחר תמונה", url: photoUrl }]] }
+    );
   }
 
   return NextResponse.json({ ok: true });
