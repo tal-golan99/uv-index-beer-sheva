@@ -8,6 +8,8 @@ interface Props {
   delay?: number;
   /** Reveal only once (no fade-out when scrolling away). Default: bidirectional. */
   once?: boolean;
+  /** Motion flavour: "up" (slide) or "scale" (settle in). Lets sections differ. */
+  variant?: "up" | "scale";
   className?: string;
 }
 
@@ -16,7 +18,7 @@ interface Props {
  * they leave (unless `once`). Driven by IntersectionObserver — the standard,
  * performant approach for scroll-reveal. Honors prefers-reduced-motion via CSS.
  */
-export default function Reveal({ children, delay = 0, once = false, className }: Props) {
+export default function Reveal({ children, delay = 0, once = false, variant = "up", className }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -43,7 +45,7 @@ export default function Reveal({ children, delay = 0, once = false, className }:
   return (
     <div
       ref={ref}
-      className={`reveal ${visible ? "reveal-in" : ""}${className ? ` ${className}` : ""}`}
+      className={`reveal ${variant === "scale" ? "reveal-scale " : ""}${visible ? "reveal-in" : ""}${className ? ` ${className}` : ""}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}

@@ -13,7 +13,7 @@ export default function RotatingBanner({ sentence }: Props) {
       className="anim-rise relative overflow-hidden rounded-full px-5 py-2.5 flex items-center justify-center gap-2 text-center"
       style={{
         background: "linear-gradient(90deg, var(--color-sun-300), var(--color-sun-400))",
-        boxShadow: "0 8px 24px -8px rgba(234,179,8,0.6)",
+        boxShadow: "0 6px 18px -8px rgba(219,154,8,0.45)",
       }}
     >
       <span className="anim-sun text-lg leading-none shrink-0" aria-hidden>

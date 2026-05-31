@@ -11,17 +11,33 @@ function StarRating() {
 
 function FeatureCard({ icon, title, desc }: { icon: string; title: string; desc: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-3xl bg-white/70 p-7 text-center ring-1 ring-white/80 backdrop-blur-sm shadow-lg hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+    <div className="radius-card shadow-pool-md flex h-full flex-col items-center gap-3 bg-white p-7 text-center ring-1 ring-[color:var(--color-pool-100)] transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] hover:-translate-y-1">
       <span className="text-4xl" aria-hidden="true">{icon}</span>
       <h3 className="text-base font-extrabold text-[color:var(--color-ink)]">{title}</h3>
-      <p className="text-sm leading-relaxed text-[color:var(--color-ink-2)]">{desc}</p>
+      <p className="prose-pretty text-sm leading-relaxed text-[color:var(--color-ink-2)]">{desc}</p>
     </div>
   );
 }
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-hidden">
+
+      {/* ── Animated aurora background — vivid summer light drifting behind everything ── */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div
+          className="anim-blob absolute -top-32 -right-24 h-[32rem] w-[32rem] rounded-full opacity-50 blur-3xl"
+          style={{ background: "radial-gradient(circle, var(--color-sun-300) 0%, rgba(255,217,94,0) 70%)" }}
+        />
+        <div
+          className="anim-blob absolute top-1/4 -left-32 h-[34rem] w-[34rem] rounded-full opacity-45 blur-3xl"
+          style={{ background: "radial-gradient(circle, var(--color-pool-300) 0%, rgba(127,196,239,0) 70%)", animationDelay: "-8s" }}
+        />
+        <div
+          className="anim-blob absolute bottom-0 right-1/4 h-[28rem] w-[28rem] rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, var(--color-pool-400) 0%, rgba(63,169,227,0) 70%)", animationDelay: "-15s" }}
+        />
+      </div>
 
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-[color:var(--color-pool-100)]">
@@ -33,7 +49,7 @@ export default function LandingPage() {
         <Link
           href="/register"
           aria-label="הירשמו ל-UV Pool"
-          className="cta-btn rounded-2xl px-5 py-2.5 text-sm font-extrabold text-white"
+          className="cta-btn radius-nested px-5 py-2.5 text-sm font-extrabold text-white"
           style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
         >
           לקפוץ למים →
@@ -42,15 +58,11 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative flex flex-col items-center justify-center px-4 pt-24 pb-12 md:pb-20 text-center overflow-hidden">
-        {/* Background blobs */}
-        <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full opacity-50" style={{ background: "radial-gradient(circle, #fde047 0%, rgba(253,224,71,0) 70%)" }} />
-        <div className="pointer-events-none absolute -bottom-10 -left-16 h-64 w-64 rounded-full opacity-40" style={{ background: "radial-gradient(circle, #7dd3fc 0%, rgba(125,211,252,0) 70%)" }} />
-
         {/* Headline */}
-        <h1 className="shimmer-text max-w-xl text-4xl font-black leading-tight sm:text-5xl md:text-6xl">
+        <h1 className="display-title max-w-2xl text-5xl font-black text-[color:var(--color-pool-700)] sm:text-6xl md:text-7xl">
           האפליקציה היחידה שתצטרכו
           <br />
-          לקיץ הקרוב
+          <span className="title-underline">לקיץ הקרוב</span>
         </h1>
 
         <p className="mt-6 max-w-md text-lg text-[color:var(--color-ink-2)] leading-relaxed text-balance">
@@ -62,10 +74,9 @@ export default function LandingPage() {
           <Link
             href="/register"
             aria-label="הירשמו ל-UV Pool בחינם"
-            className="cta-btn rounded-2xl px-10 py-5 text-xl font-extrabold text-white"
+            className="cta-btn radius-nested shadow-pool-lg px-10 py-5 text-xl font-extrabold text-white"
             style={{
               background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",
-              boxShadow: "0 16px 36px -10px rgba(2,132,199,0.75)",
             }}
           >
             🏊 לקפוץ למים
@@ -78,24 +89,24 @@ export default function LandingPage() {
 
       {/* ── Social proof strip ── */}
       <section className="mx-auto max-w-3xl px-4 py-6">
-        <Reveal once>
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white px-6 py-8 ring-1 ring-[color:var(--color-pool-100)] shadow-sm sm:flex-row sm:justify-around">
+        <Reveal once variant="scale">
+          <div className="radius-card shadow-pool-md flex flex-col items-center gap-6 bg-white px-6 py-8 ring-1 ring-[color:var(--color-pool-100)] sm:flex-row sm:justify-around">
             <div className="flex flex-col items-center gap-1">
               <StarRating />
               <p className="text-2xl font-black text-[color:var(--color-ink)]">5.0</p>
-              <p className="text-xs font-semibold text-[color:var(--color-ink-3)]">דירוג ממוצע</p>
+              <p className="text-xs font-semibold text-[color:var(--color-ink-2)]">דירוג ממוצע</p>
             </div>
             <div className="hidden h-12 w-px bg-[color:var(--color-pool-100)] sm:block" />
             <div className="flex flex-col items-center gap-1">
               <span className="text-3xl" aria-hidden="true">🏊</span>
               <p className="text-2xl font-black text-[color:var(--color-ink)]">1,000,000+</p>
-              <p className="text-xs font-semibold text-[color:var(--color-ink-3)]">שחיינים מרוצים</p>
+              <p className="text-xs font-semibold text-[color:var(--color-ink-2)]">שחיינים מרוצים</p>
             </div>
             <div className="hidden h-12 w-px bg-[color:var(--color-pool-100)] sm:block" />
             <div className="flex flex-col items-center gap-1">
               <span className="text-3xl" aria-hidden="true">🩺</span>
               <p className="text-lg font-black leading-tight text-[color:var(--color-ink)]">9 מתוך 10</p>
-              <p className="text-xs font-semibold text-[color:var(--color-ink-3)]">רופאי עור ממליצים</p>
+              <p className="text-xs font-semibold text-[color:var(--color-ink-2)]">רופאי עור ממליצים</p>
             </div>
           </div>
         </Reveal>
@@ -137,43 +148,30 @@ export default function LandingPage() {
       <section className="mx-auto max-w-2xl px-4 py-10 text-center">
         <Reveal once>
           <div
-            className="rounded-3xl px-8 py-14 relative overflow-hidden"
+            className="radius-card px-8 py-14 relative overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #7dd3fc 100%)",
+              background: "linear-gradient(135deg, var(--color-pool-700) 0%, var(--color-pool-500) 50%, var(--color-pool-300) 100%)",
             }}
           >
             <div className="pointer-events-none absolute top-0 right-0 text-[180px] leading-none opacity-10 select-none" aria-hidden="true">☀️</div>
-            <p className="text-xs font-bold uppercase tracking-widest text-white/70 mb-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-white/75 mb-3">
               מסר ישיר מהמייסדים
             </p>
-            <h2 className="text-3xl font-black text-white sm:text-4xl leading-tight">
+            <h2 className="display-title text-3xl font-black text-white sm:text-4xl">
               אל תהיו לוזרים,
               <br />
               לכו להשתזף <span aria-hidden="true">☀️</span>
             </h2>
-            <p className="mt-4 text-base text-white/80">
+            <p className="mt-4 text-base text-white/85">
               מומלץ על ידי 9 מתוך 10 רופאי עור שגם הולכים לבריכה
             </p>
             <Link
               href="/register"
               aria-label="הירשמו ל-UV Pool"
-              className="mt-8 inline-block rounded-2xl bg-white px-8 py-4 text-base font-extrabold text-[color:var(--color-pool-700)] transition-transform hover:scale-105 active:scale-95 shadow-lg"
+              className="cta-btn radius-nested shadow-pool-lg mt-8 inline-block bg-white px-8 py-4 text-base font-extrabold text-[color:var(--color-pool-700)]"
             >
               מוכן לקפוץ? →
             </Link>
-            {/* Founder identities */}
-            <div className="flex justify-center gap-8 mt-8">
-              <div className="flex flex-col items-center gap-1">
-                <span aria-hidden="true" className="text-4xl">🏊‍♂️</span>
-                <p className="text-sm font-bold text-white">טל ג.</p>
-                <p className="text-xs text-white/60">מייסד שותף, באר שבע</p>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <span aria-hidden="true" className="text-4xl">🌊</span>
-                <p className="text-sm font-bold text-white">מייסד שותף</p>
-                <p className="text-xs text-white/60">באר שבע</p>
-              </div>
-            </div>
           </div>
         </Reveal>
       </section>
@@ -193,7 +191,7 @@ export default function LandingPage() {
             { name: "ניב ג.", avatar: "🌞", text: "הייתי חיוור כמו קיר. עכשיו אני ברונזה. תודה UV Pool.", stars: 5 },
           ].map((t, i) => (
             <Reveal key={t.name} once delay={i * 120}>
-              <div className="rounded-2xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm h-full">
+              <div className="radius-nested shadow-pool-sm bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] h-full">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-3xl anim-bob" aria-hidden="true">{t.avatar}</span>
                   <div>
@@ -211,22 +209,21 @@ export default function LandingPage() {
       {/* ── Final CTA ── */}
       <section className="px-4 py-20 text-center">
         <Reveal once>
-          <p className="text-xs font-bold uppercase tracking-widest text-[color:var(--color-ink-3)] mb-4">מחכים לכם</p>
-          <h2 className="text-3xl font-black text-[color:var(--color-ink)] sm:text-4xl mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[color:var(--color-ink-2)] mb-4">מחכים לכם</p>
+          <h2 className="display-title text-3xl font-black text-[color:var(--color-ink)] sm:text-4xl mb-8">
             הבריכה לא תחכה לכם
           </h2>
           <Link
             href="/register"
             aria-label="הירשמו ל-UV Pool בחינם"
-            className="cta-btn inline-block rounded-2xl px-12 py-5 text-xl font-extrabold text-white"
+            className="cta-btn radius-nested shadow-pool-lg inline-block px-12 py-5 text-xl font-extrabold text-white"
             style={{
               background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",
-              boxShadow: "0 20px 40px -12px rgba(2,132,199,0.7)",
             }}
           >
             🏊 לקפוץ למים עכשיו
           </Link>
-          <p className="mt-4 text-sm text-[color:var(--color-ink-3)]">חינם · ללא פרסומות · ללא שטויות</p>
+          <p className="mt-4 text-sm text-[color:var(--color-ink-2)]">חינם · ללא פרסומות · ללא שטויות</p>
         </Reveal>
       </section>
 
@@ -236,7 +233,7 @@ export default function LandingPage() {
           <span className="text-xl" aria-hidden="true">☀️</span>
           <span className="font-black text-[color:var(--color-ink)]">UV Pool</span>
         </div>
-        <p className="text-xs text-[color:var(--color-ink-3)]">
+        <p className="text-xs text-[color:var(--color-ink-2)]">
           נעשה באהבה עבור שחיינות ושחיינים של באר שבע · נתוני UV מ-Open-Meteo
         </p>
       </footer>

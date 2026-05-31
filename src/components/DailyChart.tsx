@@ -29,12 +29,12 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const uv = payload[0].value;
   const level = getUVLevel(uv);
   return (
-    <div className="rounded-xl px-4 py-3 shadow-xl bg-white ring-1 ring-[color:var(--color-pool-200)]">
-      <p className="text-xs text-[color:var(--color-ink-3)] mb-1">{payload[0].payload.hour}</p>
-      <p className="text-2xl font-black leading-none" style={{ color: level.color }}>
+    <div className="radius-nested shadow-pool-lg px-4 py-3 bg-white ring-1 ring-[color:var(--color-pool-200)]">
+      <p className="text-xs text-[color:var(--color-ink-2)] mb-1">{payload[0].payload.hour}</p>
+      <p className="text-2xl font-black leading-none" style={{ color: level.colorText }}>
         {uv.toFixed(1)}
       </p>
-      <p className="text-xs mt-1" style={{ color: level.color }}>שמש {level.label}</p>
+      <p className="text-xs mt-1" style={{ color: level.colorText }}>שמש {level.label}</p>
     </div>
   );
 }
@@ -73,10 +73,10 @@ export default function DailyChart({ hours }: Props) {
   const onMouseLeave = useCallback(() => setHovered(null), []);
 
   return (
-    <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+    <div className="radius-card shadow-pool-md bg-white p-5 ring-1 ring-[color:var(--color-pool-100)]">
       <div className="mb-5">
-        <h2 className="text-lg font-extrabold text-[color:var(--color-ink)]">מדד UV היום</h2>
-        <p className="text-xs text-[color:var(--color-ink-3)] mt-0.5">העבירו עליו כדי לראות לפי שעה</p>
+        <h2 className="text-lg font-extrabold text-[color:var(--color-ink)] display-title">מדד UV היום</h2>
+        <p className="text-xs text-[color:var(--color-ink-2)] mt-0.5">העבירו עליו כדי לראות לפי שעה</p>
       </div>
 
       <div style={{ touchAction: "pan-y" }}>
@@ -88,7 +88,7 @@ export default function DailyChart({ hours }: Props) {
           data={data}
           onMouseMove={onMouseMove}
           onMouseLeave={onMouseLeave}
-          margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
         >
           <defs>
             {/* Stroke follows the UV scale: green (low) → purple (extreme) by height */}
@@ -111,7 +111,7 @@ export default function DailyChart({ hours }: Props) {
           <CartesianGrid strokeDasharray="2 6" stroke="rgba(2,132,199,0.10)" vertical={false} />
           <XAxis
             dataKey="hour"
-            tick={{ fill: "#94a3b8", fontSize: 10 }}
+            tick={{ fill: "#5f7787", fontSize: 10 }}
             tickLine={false}
             axisLine={false}
             interval="preserveStartEnd"
@@ -119,7 +119,7 @@ export default function DailyChart({ hours }: Props) {
           <YAxis
             domain={[0, 12]}
             ticks={[0, 3, 6, 9, 12]}
-            tick={{ fill: "#94a3b8", fontSize: 10 }}
+            tick={{ fill: "#5f7787", fontSize: 10 }}
             tickLine={false}
             axisLine={false}
           />

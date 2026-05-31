@@ -18,16 +18,17 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
 
   return (
     <div
-      className="flex-shrink-0 sm:flex-1 min-w-[84px] flex flex-col items-center gap-2 rounded-2xl p-4 transition-all duration-200 hover:scale-[1.03] cursor-default bg-white"
+      className="flex-shrink-0 sm:flex-1 min-w-[84px] flex flex-col items-center gap-2 radius-nested p-4 transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] hover:-translate-y-0.5 cursor-default"
       style={{
-        border: `1px solid ${isToday ? level.color : "var(--color-pool-100)"}`,
-        boxShadow: isToday
-          ? `0 10px 24px -10px ${level.color}`
-          : "0 4px 12px -8px rgba(2,132,199,0.4)",
+        // One coherent depth cue: today gets a tint + a clear 2px border (no
+        // hairline + oversized colored shadow). Everyone shares the same soft shadow.
+        background: isToday ? level.bg : "white",
+        border: isToday ? `2px solid ${level.color}` : "1px solid var(--color-pool-100)",
+        boxShadow: "var(--shadow-sm)",
       }}
     >
       <p className="text-xs font-bold text-[color:var(--color-ink-2)]">{dayNameHe(day.date)}</p>
-      <p className="text-[10px] text-[color:var(--color-ink-3)]">{dateLabel}</p>
+      <p className="text-[10px] text-[color:var(--color-ink-2)]">{dateLabel}</p>
 
       {/* UV bar */}
       <div className="w-full h-1.5 rounded-full" style={{ background: "var(--color-pool-100)" }}>
@@ -37,8 +38,8 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
         />
       </div>
 
-      {/* UV value */}
-      <p className="text-xl font-black tabular-nums" style={{ color: level.color }}>
+      {/* UV value — uses the AA-on-white text variant for readability */}
+      <p className="text-xl font-black tabular-nums" style={{ color: level.colorText }}>
         {day.max_uv.toFixed(1)}
       </p>
 
@@ -47,7 +48,7 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
         {isToday && (
           <span
             className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-            style={{ background: level.color }}
+            style={{ background: level.colorText }}
           >
             היום
           </span>
@@ -58,14 +59,16 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
 }
 
 export default function WeeklyChart({ week, today }: Props) {
+  // A plain section (not an outer card) so the day items are the only card layer —
+  // avoids the card-in-card pattern, matching PoolStreak / PoolPresence.
   return (
-    <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
-      <h2 className="text-lg font-extrabold text-[color:var(--color-ink)] mb-4">תחזית שבועית</h2>
+    <section className="space-y-3">
+      <h2 className="display-title px-1 text-lg font-extrabold text-[color:var(--color-ink)]">תחזית שבועית</h2>
       <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" style={{ touchAction: "pan-x" }}>
         {week.map((day) => (
           <DayCard key={day.date} day={day} isToday={day.date === today} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }

@@ -41,7 +41,7 @@ export default async function HomePage() {
       {/* Decorative sun blob — centered to match the background gradient's 50% -10% radial */}
       <div
         className="anim-sun pointer-events-none fixed -top-10 left-1/2 -translate-x-1/2 z-0 h-40 w-40 rounded-full opacity-70"
-        style={{ background: "radial-gradient(circle, #fde047 0%, rgba(253,224,71,0) 70%)" }}
+        style={{ background: "radial-gradient(circle, var(--color-sun-300) 0%, rgba(255,217,94,0) 70%)" }}
         aria-hidden
       />
 
@@ -63,7 +63,7 @@ export default async function HomePage() {
               <span className="text-xl md:text-2xl">📍</span>
               <h2 className="text-xl font-extrabold text-[color:var(--color-ink)] md:text-2xl">באר שבע</h2>
             </div>
-            <p className="mt-0.5 mr-8 text-xs text-[color:var(--color-ink-3)] md:text-sm">{dateLabel}</p>
+            <p className="mt-0.5 mr-8 text-xs text-[color:var(--color-ink-2)] md:text-sm">{dateLabel}</p>
           </div>
           <HeaderAuth />
         </header>
@@ -72,11 +72,8 @@ export default async function HomePage() {
         {poolTime && <PoolTimeHero uv={forecast.current} />}
 
         {/* UV index — the headline metric, highest on the page, above the pool */}
-        <Reveal once>
-          <div
-            className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-sm md:p-8"
-            style={{ boxShadow: "0 24px 60px -28px rgba(14,165,233,0.55)" }}
-          >
+        <Reveal once variant="scale">
+          <div className="radius-card shadow-pool-lg bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] md:p-8">
             <UVGauge value={forecast.current} />
           </div>
         </Reveal>
@@ -117,7 +114,7 @@ export default async function HomePage() {
         </Reveal>
 
         {/* Footer */}
-        <footer className="pb-8 text-center text-xs text-[color:var(--color-ink-3)]">
+        <footer className="pb-8 text-center text-xs text-[color:var(--color-ink-2)]">
           עודכן{" "}
           {now.toLocaleTimeString("he-IL", {
             hour: "2-digit",

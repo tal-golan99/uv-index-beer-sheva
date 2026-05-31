@@ -37,6 +37,7 @@ export default function PoolStreak() {
   useEffect(() => {
     let cancelled = false;
     let userId: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -46,27 +47,46 @@ export default function PoolStreak() {
         setLoading(false);
         return;
       }
-      userId = user.id;
       setAuthed(true);
 
+      // Set up realtime once, after we have the userId, with an explicit filter
+      // so Supabase delivers INSERT events for this user's rows reliably.
+      if (!userId) {
+        userId = user.id;
+        channel = supabase
+          .channel("pool_visits_streak")
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "pool_visits",
+              filter: `user_id=eq.${userId}`,
+            },
+            () => { if (!cancelled) load(); }
+          )
+          .subscribe();
+      }
+
       const today = jerusalemToday();
-      // Build the last 7 days (6 days ago → today) as YYYY-MM-DD.
       const base = new Date(`${today}T00:00:00Z`);
-      const window: string[] = [];
+      const dateWindow: string[] = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(base);
         d.setUTCDate(d.getUTCDate() - i);
-        window.push(d.toISOString().slice(0, 10));
+        dateWindow.push(d.toISOString().slice(0, 10));
       }
 
       const [weekRes, lastRes] = await Promise.all([
         supabase
           .from("pool_visits")
           .select("visit_date")
-          .gte("visit_date", window[0]),
+          .eq("user_id", userId)
+          .gte("visit_date", dateWindow[0]),
         supabase
           .from("pool_visits")
           .select("visit_date")
+          .eq("user_id", userId)
           .order("visit_date", { ascending: false })
           .limit(1),
       ]);
@@ -75,7 +95,7 @@ export default function PoolStreak() {
 
       const visited = new Set((weekRes.data ?? []).map((r) => r.visit_date as string));
       setDays(
-        window.map((dateStr) => ({
+        dateWindow.map((dateStr) => ({
           dateStr,
           ddmm: toDDMM(dateStr),
           visited: visited.has(dateStr),
@@ -89,23 +109,9 @@ export default function PoolStreak() {
 
     load();
 
-    // Re-fetch when a new visit is inserted (e.g., right after check-in).
-    const channel = supabase
-      .channel("pool_visits_streak")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "pool_visits" },
-        (payload) => {
-          // RLS ensures only own rows are delivered, but double-check anyway.
-          if (userId && payload.new?.user_id !== userId) return;
-          load();
-        }
-      )
-      .subscribe();
-
     return () => {
       cancelled = true;
-      channel.unsubscribe();
+      channel?.unsubscribe();
     };
   }, [supabase]);
 
@@ -115,18 +121,17 @@ export default function PoolStreak() {
   const overdue = daysSince !== null && daysSince > 5;
   const todayStr = loading ? "" : jerusalemToday();
 
-  // Skeleton while auth + data load
   if (loading) {
     return (
-      <section className="space-y-3">
-        <div className="animate-pulse rounded-3xl bg-white px-5 py-4 ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+      <section className="space-y-2">
+        <div className="animate-pulse radius-card shadow-pool-sm bg-white px-5 py-4 ring-1 ring-[color:var(--color-pool-100)]">
           <div className="mx-auto h-4 w-48 rounded-full bg-slate-200" />
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="flex justify-center gap-1.5">
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5">
-              <div className="animate-pulse aspect-square w-full rounded-lg bg-slate-200" />
-              <div className="h-2.5 w-5 animate-pulse rounded bg-slate-200" />
+            <div key={i} className="flex flex-col items-center gap-1">
+              <div className="animate-pulse h-7 w-7 rounded-md bg-slate-200" />
+              <div className="h-2 w-5 animate-pulse rounded bg-slate-200" />
             </div>
           ))}
         </div>
@@ -135,9 +140,9 @@ export default function PoolStreak() {
   }
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-2">
       {/* Days-since banner */}
-      <div className="anim-rise rounded-3xl bg-white px-5 py-4 text-center ring-1 ring-[color:var(--color-pool-100)] shadow-sm">
+      <div className="anim-rise radius-card shadow-pool-sm bg-white px-5 py-4 text-center ring-1 ring-[color:var(--color-pool-100)]">
         {daysSince === null ? (
           <p className="text-sm font-semibold text-[color:var(--color-ink-2)] sm:text-base">
             עדיין לא נכנסת לבריכה 🏊
@@ -162,14 +167,14 @@ export default function PoolStreak() {
       </div>
 
       {/* Last 7 days squares + DD/MM labels */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="flex justify-center gap-1.5">
         {days.map((d) => {
           const isToday = d.dateStr === todayStr;
           return (
-            <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
+            <div key={d.dateStr} className="flex flex-col items-center gap-1">
               <div
                 className={[
-                  "relative aspect-square w-full rounded-lg grid place-items-center",
+                  "h-7 w-7 rounded-md grid place-items-center",
                   d.visited
                     ? "bg-[color:var(--color-pool-500)]"
                     : "border-2 border-dashed border-slate-300 bg-transparent",
@@ -178,10 +183,10 @@ export default function PoolStreak() {
                 title={d.ddmm}
               >
                 {d.visited && (
-                  <span className="text-xs text-white leading-none select-none">🏊</span>
+                  <span className="text-[9px] text-white leading-none select-none">🏊</span>
                 )}
               </div>
-              <span className="text-[10px] font-semibold text-[color:var(--color-ink-3)] sm:text-xs">
+              <span className="text-[9px] font-semibold text-[color:var(--color-ink-2)]">
                 {d.ddmm}
               </span>
             </div>

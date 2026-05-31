@@ -1,28 +1,45 @@
 @import "tailwindcss";
 
-/* ===== Pool & Sun theme tokens ===== */
+/* ===== Pool & Sun theme tokens (recalibrated: committed blue, honey sun, pool-tinted ink) ===== */
 @theme {
-  --color-pool-50:  #f0f9ff;
-  --color-pool-100: #e0f2fe;
-  --color-pool-200: #bae6fd;
-  --color-pool-300: #7dd3fc;
-  --color-pool-400: #38bdf8;
-  --color-pool-500: #0ea5e9;
-  --color-pool-600: #0284c7;
-  --color-pool-700: #0369a1;
+  --color-pool-50:  #eef8ff;
+  --color-pool-100: #d9eefc;
+  --color-pool-200: #b4ddf8;
+  --color-pool-300: #7fc4ef;
+  --color-pool-400: #3fa9e3;
+  --color-pool-500: #0e93d4;
+  --color-pool-600: #0a73ad;
+  --color-pool-700: #0a5784;
 
-  --color-sun-300: #fde047;
-  --color-sun-400: #facc15;
-  --color-sun-500: #eab308;
+  --color-sun-300: #ffd95e;
+  --color-sun-400: #f7bd24;
+  --color-sun-500: #db9a08;
 
-  --color-ink:    #0f172a;
-  --color-ink-2:  #475569;
-  --color-ink-3:  #94a3b8;
+  /* Ink carries a faint pool tint instead of flat slate; higher contrast across the board */
+  --color-ink:    #0c1b29;
+  --color-ink-2:  #3c5161;  /* ~7:1 on white — safe for labels & body */
+  --color-ink-3:  #6a8295;  /* ~3.9:1 — decorative micro-labels (>=18px) ONLY, never body */
 }
 
 :root {
-  --bg-top: #e0f2fe;
-  --bg-bottom: #f8fafc;
+  --bg-top: #d7eefb;
+  --bg-bottom: #f6fafc;
+
+  /* Radius scale (one system) */
+  --radius-lg: 24px;  /* large surfaces / cards */
+  --radius-md: 16px;  /* small / nested */
+  --radius-sm: 12px;  /* inner chips */
+
+  /* Pool-tinted elevation (never pure black) */
+  --shadow-sm: 0 1px 2px rgba(10,115,173,0.08), 0 2px 8px rgba(10,115,173,0.06);
+  --shadow-md: 0 4px 14px -3px rgba(10,115,173,0.14), 0 10px 28px -8px rgba(10,87,132,0.12);
+  --shadow-lg: 0 12px 32px -10px rgba(10,115,173,0.24), 0 26px 60px -28px rgba(10,87,132,0.30);
+
+  /* Easing tokens (strong custom curves) */
+  --ease-out-quart:    cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo:     cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1); /* subtle overshoot, playful */
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 }
 
 * {
@@ -35,132 +52,219 @@ html, body {
 
 body {
   background:
-    radial-gradient(ellipse 90% 55% at 50% -10%, rgba(125, 211, 252, 0.55), transparent 70%),
-    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 45%);
+    radial-gradient(ellipse 92% 56% at 50% -12%, rgba(63, 169, 227, 0.42), transparent 70%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 48%);
   background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-assistant), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Festive variant when UV >= 9 — warmer, brighter, sunnier */
+/* Festive variant when UV >= 9 — warmer honey-over-water, intentional not candy */
 body.pool-time {
-  --bg-top: #fef9c3;
-  --bg-bottom: #e0f2fe;
+  --bg-top: #fdeec0;
+  --bg-bottom: #d7eefb;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -5%, rgba(250, 204, 21, 0.55), transparent 65%),
-    radial-gradient(ellipse 100% 60% at 50% 110%, rgba(56, 189, 248, 0.45), transparent 70%),
-    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 60%);
+    radial-gradient(ellipse 82% 52% at 50% -6%, rgba(247, 189, 36, 0.42), transparent 66%),
+    radial-gradient(ellipse 100% 62% at 50% 112%, rgba(63, 169, 227, 0.36), transparent 72%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 62%);
 }
 
 /* Hide scrollbar but keep scrolling */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ===== Animations ===== */
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-10px); }
+/* Elevation + radius helpers (one system, applied everywhere) */
+.shadow-pool-sm { box-shadow: var(--shadow-sm); }
+.shadow-pool-md { box-shadow: var(--shadow-md); }
+.shadow-pool-lg { box-shadow: var(--shadow-lg); }
+.radius-card { border-radius: var(--radius-lg); }
+.radius-nested { border-radius: var(--radius-md); }
+
+/* ===== Typography helpers (single family, real hierarchy) ===== */
+/* Hebrew display face (Suez One) for headings/hero — gives real heading↔body
+   contrast against the Assistant body. Weight 400 because Suez One is a single,
+   inherently heavy weight; forcing font-black would synthesize an ugly faux-bold. */
+.display-title {
+  font-family: var(--font-display), var(--font-assistant), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-wrap: balance;
+  line-height: 1.05;
 }
+.prose-pretty { text-wrap: pretty; }
+
+/* ===== Motivated motion ===== */
+
+/* Swimmers floating in water — the one place "bob" earns its keep */
 @keyframes bob {
   0%, 100% { transform: translateY(0) rotate(-2deg); }
   50%      { transform: translateY(-7px) rotate(2deg); }
 }
-@keyframes drift {
-  0%, 100% { transform: translateX(0); }
-  50%       { transform: translateX(40px); }
-}
+.anim-bob { animation: bob 4s var(--ease-in-out-quint) infinite; }
+
+/* Sun: gentle pulse (kept for the celebratory hero sun only) */
 @keyframes sun-pulse {
-  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 18px rgba(250,204,21,0.55)); }
-  50%      { transform: scale(1.07); filter: drop-shadow(0 0 34px rgba(250,204,21,0.85)); }
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 16px rgba(247,189,36,0.50)); }
+  50%      { transform: scale(1.06); filter: drop-shadow(0 0 30px rgba(247,189,36,0.78)); }
 }
-@keyframes spin-slow {
-  to { transform: rotate(360deg); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
+.anim-sun { animation: sun-pulse 4.5s var(--ease-in-out-quint) infinite; }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+/* Entrances — start from scale(0.96)+opacity, never scale(0) */
 @keyframes pop-in {
-  0%   { transform: scale(0.6) translateY(20px); opacity: 0; }
-  60%  { transform: scale(1.06) translateY(-4px); opacity: 1; }
-  100% { transform: scale(1) translateY(0); }
+  0%   { transform: scale(0.96) translateY(10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0);       opacity: 1; }
 }
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+.anim-pop  { animation: pop-in 0.5s var(--ease-spring) both; }
+.anim-rise { animation: rise-in 0.5s var(--ease-out-expo) both; }
 
-.anim-float   { animation: float-y 6s ease-in-out infinite; }
-.anim-bob     { animation: bob 4s ease-in-out infinite; }
-.anim-sun     { animation: sun-pulse 4s ease-in-out infinite; }
-.anim-pop     { animation: pop-in 0.6s cubic-bezier(.34,1.56,.64,1) both; }
-.anim-rise    { animation: rise-in 0.5s ease both; }
-.anim-drift   { animation: drift 6s ease-in-out infinite; }
-
-/* Shimmering gradient text (used for the giant "מהר לבריכה" title) */
-.shimmer-text {
-  background: linear-gradient(100deg, #0284c7 20%, #38bdf8 40%, #fde047 55%, #38bdf8 70%, #0284c7 90%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
+/* Pressable: instant tactile feedback on any interactive element */
+.pressable {
+  transition: transform 160ms var(--ease-out-quart);
+}
+.pressable:active {
+  transform: scale(0.97);
 }
 
-/* Primary CTA button — shadow lifts on hover */
+/* Primary CTA — lift without layout-shifting scale */
 .cta-btn {
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s var(--ease-out-quart), box-shadow 0.22s var(--ease-out-quart);
 }
 .cta-btn:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 24px 48px -6px rgba(2, 132, 199, 0.85) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg) !important;
 }
 .cta-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
-/* Soft, very slow light sweep — a calm sheen, not a flicker */
-.water-sheen::after {
+/* Solid committed display title with a one-time underline sweep (replaces gradient text) */
+@keyframes underline-sweep {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.title-underline {
+  position: relative;
+  display: inline-block;
+}
+.title-underline::after {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    rgba(255, 255, 255, 0) 35%,
-    rgba(255, 255, 255, 0.16) 50%,
-    rgba(255, 255, 255, 0) 65%
-  );
-  background-size: 250% 100%;
-  animation: shimmer 14s ease-in-out infinite;
-  pointer-events: none;
+  left: 0;
+  right: 0;
+  bottom: -0.12em;
+  height: 0.10em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-pool-500), var(--color-sun-400));
+  transform: scaleX(0);
+  transform-origin: right; /* RTL: sweep from the right */
+  animation: underline-sweep 0.7s var(--ease-out-expo) 0.25s forwards;
 }
 
-/* ===== Scroll-reveal (IntersectionObserver-driven) ===== */
+/* Tap ripple — water splash feedback (set --rx/--ry to tap point) */
+@keyframes ripple-out {
+  from { transform: translate(-50%, -50%) scale(0); opacity: 0.5; }
+  to   { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+.ripple {
+  position: absolute;
+  left: var(--rx, 50%);
+  top: var(--ry, 50%);
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 60%);
+  pointer-events: none;
+  animation: ripple-out 0.6s var(--ease-out-expo) forwards;
+}
+
+/* Animated water caustics over the pool image (decor, data-neutral, GPU-only) */
+@keyframes caustic-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.1); }
+  50%      { transform: translate3d(3%, 2%, 0) scale(1.18); }
+}
+@keyframes caustic-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.2); }
+  50%      { transform: translate3d(-3%, -2%, 0) scale(1.12); }
+}
+.water-caustics { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.water-caustics::before,
+.water-caustics::after {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(closest-side at 30% 35%, rgba(255,255,255,0.20), transparent 60%),
+    radial-gradient(closest-side at 68% 60%, rgba(255,255,255,0.16), transparent 58%),
+    radial-gradient(closest-side at 50% 80%, rgba(180,221,248,0.18), transparent 62%);
+  mix-blend-mode: screen;
+}
+.water-caustics::before { animation: caustic-drift-a 11s var(--ease-in-out-quint) infinite; }
+.water-caustics::after  { animation: caustic-drift-b 14s var(--ease-in-out-quint) infinite; opacity: 0.8; }
+
+/* Drifting aurora blobs — vivid summer light, slow and GPU-only (transform/opacity) */
+@keyframes blob-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(5%, -4%, 0) scale(1.1); }
+  66%      { transform: translate3d(-4%, 5%, 0) scale(0.94); }
+}
+.anim-blob { animation: blob-float 24s var(--ease-in-out-quint) infinite; will-change: transform; }
+
+/* UV gauge aura — color encodes severity (state, not decoration). Color set inline via --aura. */
+@keyframes aura-breathe {
+  0%, 100% { opacity: 0.42; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 0.58; transform: translate(-50%, -50%) scale(1.04); }
+}
+.uv-aura {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 116%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--aura, rgba(14,147,212,0.5)) 0%, transparent 62%);
+  filter: blur(14px);
+  pointer-events: none;
+  animation: aura-breathe 5s var(--ease-in-out-quint) infinite;
+}
+
+/* ===== Scroll-reveal (IntersectionObserver-driven) — supports varied directions ===== */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
+  transform: translateY(26px);
   transition:
-    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.7s var(--ease-out-expo),
+    transform 0.7s var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
   will-change: opacity, transform;
 }
+.reveal-scale { transform: scale(0.96); }
 .reveal-in {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-float, .anim-bob, .anim-sun, .anim-pop, .anim-rise, .anim-drift,
-  .shimmer-text, .water-sheen::after {
+  .anim-bob, .anim-sun, .anim-pop, .anim-rise, .anim-blob,
+  .title-underline::after, .ripple,
+  .water-caustics::before, .water-caustics::after,
+  .uv-aura {
     animation: none !important;
   }
+  .title-underline::after { transform: scaleX(1); }
   .reveal {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
   }
-  .cta-btn {
+  .cta-btn, .pressable {
     transition: none !important;
   }
 }

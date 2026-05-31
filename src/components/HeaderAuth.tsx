@@ -31,7 +31,7 @@ export default function HeaderAuth() {
     return (
       <Link
         href="/account"
-        className="flex items-center gap-2.5 rounded-2xl bg-white px-3 py-2 text-sm font-bold text-[color:var(--color-ink)] ring-1 ring-[color:var(--color-pool-200)] shadow-sm transition-all hover:bg-[color:var(--color-pool-50)] hover:shadow-md active:scale-[0.98]"
+        className="pressable radius-nested shadow-pool-sm flex items-center gap-2.5 bg-white px-3 py-2 text-sm font-bold text-[color:var(--color-ink)] ring-1 ring-[color:var(--color-pool-200)] transition-colors hover:bg-[color:var(--color-pool-50)]"
       >
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -49,10 +49,9 @@ export default function HeaderAuth() {
   return (
     <Link
       href="/register"
-      className="rounded-2xl px-6 py-3.5 text-base font-extrabold text-white transition-transform hover:scale-105 active:scale-95 md:px-8 md:py-4 md:text-lg"
+      className="cta-btn radius-nested shadow-pool-md px-6 py-3.5 text-base font-extrabold text-white md:px-8 md:py-4 md:text-lg"
       style={{
         background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))",
-        boxShadow: "0 12px 28px -10px rgba(2,132,199,0.8)",
       }}
     >
       התחבר / הרשם

@@ -14,12 +14,12 @@ export default function PoolTimeHero({ uv }: Props) {
         🌞
       </span>
       <h1
-        className="shimmer-text font-black leading-[0.95] tracking-tight"
-        style={{ fontSize: "clamp(3rem, 16vw, 7rem)" }}
+        className="display-title font-black text-[color:var(--color-pool-700)]"
+        style={{ fontSize: "clamp(3rem, 15vw, 6rem)" }}
       >
-        מהר לבריכה!
+        <span className="title-underline">מהר לבריכה!</span>
       </h1>
-      <p className="mt-3 text-base sm:text-lg font-semibold text-[color:var(--color-pool-700)]">
+      <p className="prose-pretty mt-5 text-base sm:text-lg font-semibold text-[color:var(--color-pool-700)]">
         ה-UV הגיע ל-{uv.toFixed(0)} — שמש מושלמת, אל תבזבזו אותה 🏊
       </p>
     </div>

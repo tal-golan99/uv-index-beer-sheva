@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Photo } from "@/lib/photos";
 
@@ -53,7 +54,7 @@ export default function ImageSlider({
 
   return (
     <div
-      className={`relative w-full overflow-hidden ${rounded} ${heightClass ?? ""} ring-1 ring-[color:var(--color-pool-200)] shadow-md`}
+      className={`relative w-full max-w-full overflow-hidden ${rounded} ${heightClass ?? ""} ring-1 ring-[color:var(--color-pool-200)] shadow-pool-md`}
       style={
         heightClass
           ? { touchAction: "pan-y" }
@@ -86,20 +87,16 @@ export default function ImageSlider({
           <button
             onClick={() => go(-1)}
             aria-label="הקודם"
-            className="absolute top-1/2 right-2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/80 text-[color:var(--color-ink)] backdrop-blur transition-transform hover:scale-110 active:scale-95"
+            className="pressable absolute top-1/2 right-2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/85 text-[color:var(--color-ink)] backdrop-blur"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-              <path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <CaretRight size={20} weight="bold" aria-hidden />
           </button>
           <button
             onClick={() => go(1)}
             aria-label="הבא"
-            className="absolute top-1/2 left-2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/80 text-[color:var(--color-ink)] backdrop-blur transition-transform hover:scale-110 active:scale-95"
+            className="pressable absolute top-1/2 left-2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/85 text-[color:var(--color-ink)] backdrop-blur"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-              <path d="M12 5l-5 5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <CaretLeft size={20} weight="bold" aria-hidden />
           </button>
 
           {/* dots */}

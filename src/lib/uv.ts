@@ -5,6 +5,9 @@ export interface UVLevel {
   safeMinutes: number | null;
   protection: string;
   color: string;
+  /** Darkened variant that clears WCAG AA (>=4.5:1) on white — use when the level
+   *  color is rendered as TEXT. The vivid `color` stays for arcs/bars/dots/borders. */
+  colorText: string;
   colorMuted: string;
   bg: string;
   border: string;
@@ -19,6 +22,7 @@ export const UV_LEVELS: UVLevel[] = [
     safeMinutes: null,
     protection: "פעילות חופשית ללא הגבלה",
     color: "#22c55e",
+    colorText: "#15803d",
     colorMuted: "rgba(34,197,94,0.15)",
     bg: "rgba(34,197,94,0.08)",
     border: "rgba(34,197,94,0.25)",
@@ -31,6 +35,7 @@ export const UV_LEVELS: UVLevel[] = [
     safeMinutes: 60,
     protection: "קרם הגנה SPF 30 + כובע",
     color: "#eab308",
+    colorText: "#a16207",
     colorMuted: "rgba(234,179,8,0.15)",
     bg: "rgba(234,179,8,0.08)",
     border: "rgba(234,179,8,0.25)",
@@ -43,6 +48,7 @@ export const UV_LEVELS: UVLevel[] = [
     safeMinutes: 30,
     protection: "כובע + SPF 50 + הצל בצהריים",
     color: "#f97316",
+    colorText: "#c2410c",
     colorMuted: "rgba(249,115,22,0.15)",
     bg: "rgba(249,115,22,0.08)",
     border: "rgba(249,115,22,0.25)",
@@ -55,6 +61,7 @@ export const UV_LEVELS: UVLevel[] = [
     safeMinutes: 20,
     protection: "SPF 50+ + משקפיים + שהייה בצל",
     color: "#ef4444",
+    colorText: "#b91c1c",
     colorMuted: "rgba(239,68,68,0.15)",
     bg: "rgba(239,68,68,0.08)",
     border: "rgba(239,68,68,0.25)",
@@ -67,6 +74,7 @@ export const UV_LEVELS: UVLevel[] = [
     safeMinutes: 10,
     protection: "הישאר בצל — קרינה קיצונית",
     color: "#a855f7",
+    colorText: "#7e22ce",
     colorMuted: "rgba(168,85,247,0.15)",
     bg: "rgba(168,85,247,0.08)",
     border: "rgba(168,85,247,0.25)",
