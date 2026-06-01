@@ -16,6 +16,9 @@ export interface UVForecast {
   fetchedAt: string; // ISO string
   sunrise: string | null; // ISO datetime for today's sunrise in Asia/Jerusalem
   sunset: string | null;  // ISO datetime for today's sunset in Asia/Jerusalem
+  /** Raw Open-Meteo hourly data for today (24 pts, 1h resolution). Use for pool window detection
+   *  instead of today.hours which is wttr.in 3h-sampled data. */
+  omHoursToday: HourlyUV[];
 }
 
 export interface Subscriber {

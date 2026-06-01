@@ -64,7 +64,7 @@ export default function WeeklyChart({ week, today }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="display-title px-1 text-lg text-[color:var(--color-ink)]">תחזית שבועית</h2>
-      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" style={{ touchAction: "pan-x" }}>
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" dir="ltr" style={{ touchAction: "pan-x" }}>
         {week.map((day) => (
           <DayCard key={day.date} day={day} isToday={day.date === today} />
         ))}

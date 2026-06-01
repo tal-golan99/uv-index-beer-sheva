@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { getActiveProfileSubscribers } from "@/lib/supabase";
 
 function getAdmin() {
   return createClient(
@@ -43,13 +42,9 @@ export async function POST(request: Request) {
     query = newQuery;
   }
 
-  // Upsert response — one item per user per shared query
-  await admin
-    .from("pool_equipment_responses")
-    .upsert(
-      { query_id: query.id, user_id: user.id, item },
-      { onConflict: "query_id,user_id" }
-    );
+  // Delete existing response for this user then insert fresh (avoids needing a unique constraint)
+  await admin.from("pool_equipment_responses").delete().eq("query_id", query.id).eq("user_id", user.id);
+  await admin.from("pool_equipment_responses").insert({ query_id: query.id, user_id: user.id, item });
 
   // Get bringer's display name
   const { data: profile } = await admin
@@ -59,12 +54,14 @@ export async function POST(request: Request) {
     .maybeSingle();
   const name = (profile?.display_name as string | null) ?? "מישהו";
 
-  // Broadcast Telegram notification to all subscribers
+  // Broadcast to all Telegram-connected users (regardless of phone_notifications setting)
   try {
-    const subscribers = await getActiveProfileSubscribers();
-    const chatIds = subscribers
-      .map((s) => s.telegram_chat_id!)
-      .filter((id) => Boolean(id));
+    const { data: telegramProfiles } = await admin
+      .from("profiles")
+      .select("telegram_chat_id")
+      .not("telegram_chat_id", "is", null);
+
+    const chatIds = (telegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
 
     if (chatIds.length > 0) {
       const text = `👋 ${name} מביא ${item} לבריכה! 🏊`;

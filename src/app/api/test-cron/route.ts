@@ -22,11 +22,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No Telegram chat IDs found", subscriberCount: subscribers.length });
     }
 
-    const chartHours = forecast.today.hours.filter((h) => {
+    // Use Open-Meteo hourly data (24pts) for pool window — wttr.in is 3h-sampled (too coarse)
+    const allHours = forecast.omHoursToday.length > 0 ? forecast.omHoursToday : forecast.today.hours;
+    const chartHours = allHours.filter((h) => {
       const hr = parseInt(h.time.slice(11, 13));
       return hr >= 8 && hr <= 17;
     });
-    // Same threshold as production cron: UV >= 8 to capture shoulder hours
     const poolHours = chartHours.filter((h) => h.uv_index >= 8);
     const poolFrom = poolHours[0] ? parseInt(poolHours[0].time.slice(11, 13)) : null;
     const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;

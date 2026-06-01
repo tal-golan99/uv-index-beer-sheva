@@ -127,12 +127,13 @@ export async function fetchUVForecast(): Promise<UVForecast> {
 
   // current gauge: scaled Open-Meteo (1-hour precision, better than wttr.in's 3h buckets)
   return {
-    current:   scale(omData.current),
-    today:     week[0],
+    current:      scale(omData.current),
+    today:        week[0],
     week,
-    fetchedAt: new Date().toISOString(),
-    sunrise:   omData.sunrise,
-    sunset:    omData.sunset,
+    fetchedAt:    new Date().toISOString(),
+    sunrise:      omData.sunrise,
+    sunset:       omData.sunset,
+    omHoursToday: omData.week[0]?.hours ?? [],
   };
 }
 

@@ -14,6 +14,7 @@ const TIERS = [
     features: ["UV בזמן אמת", "מי בבריכה עכשיו", "התראות טלגרם בסיסיות", "7 ימי היסטוריה"],
     cta: "הפלאן הנוכחי שלך",
     ctaDisabled: true,
+    isCurrent: true,
   },
   {
     name: "Bronze UV",
@@ -21,7 +22,7 @@ const TIERS = [
     period: "לחודש",
     emoji: "🥉",
     color: "#cd7f32",
-    features: ["הכל בחינמי", "30 יום היסטוריה", "ממוצע זמן שבועי מפורט", "עיצוב לילה מתקדם"],
+    features: ["30 יום היסטוריה", "ממוצע זמן שבועי מפורט", "עיצוב לילה מתקדם"],
     cta: "בקרוב",
     ctaDisabled: true,
     soon: true,
@@ -32,7 +33,7 @@ const TIERS = [
     period: "לחודש",
     emoji: "🥇",
     color: "#f7bd24",
-    features: ["הכל ב-Bronze", "כתר מיוחד על האווטאר", "סטטיסטיקות קבוצה", "עדיפות בהתראות"],
+    features: ["כתר מיוחד על האווטאר", "סטטיסטיקות קבוצה", "עדיפות בהתראות"],
     cta: "בקרוב",
     ctaDisabled: true,
     soon: true,
@@ -43,7 +44,7 @@ const TIERS = [
     period: "לחודש",
     emoji: "💎",
     color: "#a855f7",
-    features: ["הכל ב-Gold", "אנליטיקס מלאות", "עיצוב אווטאר מותאם אישית", "שנה אחת ללא פרסומות", "תג Diamond בפרופיל"],
+    features: ["אנליטיקס מלאות", "עיצוב אווטאר מותאם אישית", "שנה אחת ללא פרסומות", "תג Diamond בפרופיל"],
     cta: "בקרוב",
     ctaDisabled: true,
     soon: true,
@@ -113,26 +114,26 @@ export default function MorePage() {
             className="mx-auto inline-block rounded-full px-6 py-2 text-sm font-extrabold text-white"
             style={{ background: "linear-gradient(90deg, var(--color-pool-600), #a855f7)" }}
           >
-            ☀️ Coming Soon — נפתח בקרוב
+            ☀️ נפתח בקרוב
           </div>
         </section>
 
-        {/* Pricing tiers */}
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Pricing tiers — dir=ltr so cards flow Free→Bronze→Gold→Diamond left-to-right */}
+        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" dir="ltr">
           {TIERS.map((tier) => (
             <div
               key={tier.name}
-              className="radius-card shadow-pool-md bg-white p-6 flex flex-col gap-4 ring-1 ring-[color:var(--color-pool-100)] relative overflow-hidden"
+              className="radius-card shadow-pool-md bg-white p-6 flex flex-col gap-4 ring-1 ring-[color:var(--color-pool-100)] relative"
             >
               {tier.soon && (
                 <div
-                  className="absolute top-3 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white"
+                  className="absolute -top-1 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white z-10"
                   style={{ background: "linear-gradient(90deg, #f59e0b, #ef4444)" }}
                 >
                   בקרוב
                 </div>
               )}
-              <div className="text-center">
+              <div className="text-center" dir="rtl">
                 <span className="text-4xl">{tier.emoji}</span>
                 <h2 className="mt-2 text-lg font-extrabold text-[color:var(--color-ink)]">{tier.name}</h2>
                 <div className="mt-1">
@@ -141,7 +142,7 @@ export default function MorePage() {
                 </div>
               </div>
 
-              <ul className="space-y-1.5 flex-1">
+              <ul className="space-y-1.5 flex-1" dir="rtl">
                 {tier.features.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-xs text-[color:var(--color-ink-2)]">
                     {tier.soon ? (
@@ -154,13 +155,22 @@ export default function MorePage() {
                 ))}
               </ul>
 
-              <button
-                disabled={tier.ctaDisabled}
-                className="w-full rounded-2xl py-3 text-sm font-extrabold text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ background: `linear-gradient(90deg, ${tier.color}, ${tier.color}99)` }}
-              >
-                {tier.cta}
-              </button>
+              {tier.isCurrent ? (
+                <div
+                  className="w-full rounded-2xl py-3 text-sm font-extrabold text-center"
+                  style={{ background: `${tier.color}22`, color: tier.color }}
+                >
+                  {tier.cta}
+                </div>
+              ) : (
+                <a
+                  href="#waitlist"
+                  className="w-full rounded-2xl py-3 text-sm font-extrabold text-white text-center block transition-opacity hover:opacity-90 active:opacity-80"
+                  style={{ background: `linear-gradient(90deg, ${tier.color}, ${tier.color}99)` }}
+                >
+                  {tier.cta}
+                </a>
+              )}
             </div>
           ))}
         </section>
@@ -179,7 +189,7 @@ export default function MorePage() {
         </section>
 
         {/* Waitlist CTA */}
-        <section className="text-center space-y-4">
+        <section id="waitlist" className="text-center space-y-4">
           <h2 className="display-title text-2xl text-[color:var(--color-ink)]">רוצה להיות ראשון לדעת?</h2>
           <p className="text-sm text-[color:var(--color-ink-2)]">הירשם לרשימת ההמתנה ונעדכן אותך כשהמנוי עולה.</p>
           <MoreUVWaitlist />

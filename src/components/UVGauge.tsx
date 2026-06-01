@@ -107,10 +107,11 @@ export default function UVGauge({ value }: Props) {
         style={{ ["--aura" as string]: hexToRgba(level.color, 0.5) }}
       />
 
-      <div className="relative w-full max-w-xs">
+      <div className="relative w-full max-w-xs overflow-visible">
       <svg
         viewBox="0 0 200 118"
-        className="w-full"
+        className="w-full overflow-visible"
+        overflow="visible"
         role="img"
         aria-label={`UV index ${value}`}
       >

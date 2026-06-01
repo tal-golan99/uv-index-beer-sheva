@@ -79,12 +79,13 @@ async function seedTodayAlert(date: string, now: Date) {
   if (!subscribers.length) return;
 
   const chatIds = subscribers.map((s) => s.telegram_chat_id!).filter(Boolean);
-  const chartHours = forecast.today.hours.filter((h) => {
+  // Use Open-Meteo hourly data (24pts, 1h resolution) for pool window detection.
+  // forecast.today.hours is wttr.in 3h-sampled — too coarse (only 12:00 passes UV≥8).
+  const allHours = forecast.omHoursToday.length > 0 ? forecast.omHoursToday : forecast.today.hours;
+  const chartHours = allHours.filter((h) => {
     const hr = parseInt(h.time.slice(11, 13));
     return hr >= 8 && hr <= 17;
   });
-  // Use UV >= 8 to detect pool hours — hourly averages near 8 will cross 9 during the hour.
-  // poolTo + 1 because the last hour is a full 60 min block.
   const poolHours = chartHours.filter((h) => h.uv_index >= 8);
   const poolFrom = poolHours[0] ? parseInt(poolHours[0].time.slice(11, 13)) : null;
   const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;

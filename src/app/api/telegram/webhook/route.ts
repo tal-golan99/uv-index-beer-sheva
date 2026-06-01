@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendCalendarInviteEmails } from "@/lib/calendar-invite";
 
 function getAdmin() {
   return createClient(
@@ -30,7 +31,7 @@ async function answerCallbackQuery(callbackQueryId: string) {
   );
 }
 
-const BRING_ITEMS = ["🍺 בירות", "🧊 קרח", "🍉 אבטיח", "🎒 תרמיל", "🧴 שמן הגנה", "🔊 רמקול", "🥏 פריסבי"];
+const BRING_ITEMS = ["🍺 בירות", "🧊 קרח", "🍉 אבטיח", "🧴 קרם הגנה", "🔊 רמקול", "🥏 פריסבי"];
 
 /** Inline keyboard for /bring — preset items 3 per row. */
 function buildBringKeyboard() {
@@ -40,6 +41,20 @@ function buildBringKeyboard() {
       BRING_ITEMS.slice(i, i + 3).map((item) => ({
         text: item,
         callback_data: `bring:item:${item}`,
+      }))
+    );
+  }
+  return { inline_keyboard: rows };
+}
+
+/** Inline keyboard for /ask — same items as /bring but different callback prefix. */
+function buildAskKeyboard() {
+  const rows: { text: string; callback_data: string }[][] = [];
+  for (let i = 0; i < BRING_ITEMS.length; i += 3) {
+    rows.push(
+      BRING_ITEMS.slice(i, i + 3).map((item) => ({
+        text: item,
+        callback_data: `ask:item:${item}`,
       }))
     );
   }
@@ -122,10 +137,10 @@ async function broadcastInvite(fromChatId: string, dateStr: string, hour: number
     `📅 ${dateDisplay} בשעה ${hour}:00\n\n` +
     `לחצו להוסיף ליומן 👇`;
 
-  // Fetch all chat IDs except the sender
+  // Fetch all profiles (telegram + email) for broadcast
   const { data: profiles } = await admin
     .from("profiles")
-    .select("telegram_chat_id")
+    .select("telegram_chat_id, email")
     .not("telegram_chat_id", "is", null)
     .neq("telegram_chat_id", fromChatId);
 
@@ -135,6 +150,18 @@ async function broadcastInvite(fromChatId: string, dateStr: string, hour: number
   await Promise.allSettled(
     recipients.map((chatId) => sendMessage(chatId, inviteText, keyboard))
   );
+
+  // Also send ICS calendar invite via email to all users who have an email
+  const allEmails = (profiles ?? [])
+    .map((p) => (p as { email?: string | null }).email)
+    .filter((e): e is string => Boolean(e));
+
+  await sendCalendarInviteEmails({
+    emails: allEmails,
+    dateStr,
+    hour,
+    organizer: inviterName,
+  });
 
   return { calUrl, dateDisplay, hour };
 }
@@ -194,6 +221,29 @@ async function handleBring(fromChatId: string, item: string) {
   await sendMessage(fromChatId, `✅ עדכנו את כולם שאתה מביא ${item}!`);
 }
 
+/** Ask if anyone can bring a specific item — broadcasts "מישהו יכול להביא X?" to all. */
+async function handleAsk(fromChatId: string, item: string) {
+  const admin = getAdmin();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("display_name")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  const name = (profile?.display_name as string | null) ?? "מישהו";
+  const broadcastText = `❓ ${name} שואל: מישהו יכול להביא ${item} לבריכה?`;
+
+  const { data: others } = await admin
+    .from("profiles")
+    .select("telegram_chat_id")
+    .not("telegram_chat_id", "is", null)
+    .neq("telegram_chat_id", fromChatId);
+
+  const recipients = (others ?? []).map((p) => p.telegram_chat_id as string);
+  await Promise.allSettled(recipients.map((id) => sendMessage(id, broadcastText)));
+  await sendMessage(fromChatId, `✅ שלחנו לכולם שאתה מחפש מי שמביא ${item}`);
+}
+
 /** Broadcast "I'm arriving at X:00" to all other users. */
 async function handleLater(fromChatId: string, hour: number) {
   const admin = getAdmin();
@@ -249,6 +299,9 @@ export async function POST(req: NextRequest) {
     } else if (data.startsWith("bring:item:")) {
       const item = data.slice("bring:item:".length);
       await handleBring(chatId, item);
+    } else if (data.startsWith("ask:item:")) {
+      const item = data.slice("ask:item:".length);
+      await handleAsk(chatId, item);
     } else if (data.startsWith("later:time:")) {
       const hour = parseInt(data.split(":")[2]);
       await handleLater(chatId, hour);
@@ -305,8 +358,18 @@ export async function POST(req: NextRequest) {
 
   if (text === "/invite" || text.startsWith("/invite ")) {
     await sendMessage(chatId, "בחר תאריך לבריכה:", buildDateKeyboard());
-  } else if (text === "/bring" || text.startsWith("/bring ")) {
-    await sendMessage(chatId, "מה אתה מביא לבריכה? 🎒", buildBringKeyboard());
+  } else if (text === "/bring") {
+    await sendMessage(chatId, "מה אתה מביא לבריכה? בחר מהרשימה או כתוב בחופשי 👇", buildBringKeyboard());
+  } else if (text.startsWith("/bring ")) {
+    // Free-text bring: /bring [item]
+    const item = text.slice("/bring ".length).trim();
+    if (item) await handleBring(chatId, item);
+  } else if (text === "/ask") {
+    await sendMessage(chatId, "מה אתה שואל אם מישהו מביא? בחר מהרשימה או כתוב בחופשי 👇", buildAskKeyboard());
+  } else if (text.startsWith("/ask ")) {
+    // Free-text ask: /ask [item]
+    const item = text.slice("/ask ".length).trim();
+    if (item) await handleAsk(chatId, item);
   } else if (text === "/later" || text.startsWith("/later ")) {
     await sendMessage(chatId, "באיזו שעה אתה מגיע? ⏰", buildLaterKeyboard());
   } else if (text === "/help") {
@@ -315,6 +378,9 @@ export async function POST(req: NextRequest) {
       "🏊 UV Pool Bot — פקודות זמינות:\n\n" +
       "/invite — זמן חברים לבריכה עם Google Calendar 📅\n" +
       "/bring  — הודע מה אתה מביא לבריכה 🎒\n" +
+      "/bring [פריט] — כתוב ישירות מה אתה מביא\n" +
+      "/ask    — שאל אם מישהו יכול להביא פריט ❓\n" +
+      "/ask [פריט] — שאל ישירות לגבי פריט\n" +
       "/later  — הודע מתי אתה מגיע ⏰"
     );
   }
