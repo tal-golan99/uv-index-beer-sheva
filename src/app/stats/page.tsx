@@ -74,7 +74,7 @@ export default async function StatsPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
             <p className="text-4xl font-black text-[color:var(--color-pool-600)]">{totalVisits}</p>
-            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">ביקורים סה"כ</p>
+            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">ביקורים סה&quot;כ</p>
           </div>
           <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
             <p className="text-4xl font-black text-[color:var(--color-pool-600)]">{last7Count}</p>
@@ -84,7 +84,7 @@ export default async function StatsPage() {
             <p className="text-2xl font-black text-[color:var(--color-pool-600)]">
               {totalMinutes > 0 ? formatDuration(totalMinutes) : "—"}
             </p>
-            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">זמן בריכה סה"כ</p>
+            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">זמן בריכה סה&quot;כ</p>
           </div>
           <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
             <p className="text-2xl font-black text-[color:var(--color-pool-600)]">
@@ -144,7 +144,7 @@ export default async function StatsPage() {
           <div className="rounded-3xl bg-white p-8 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center space-y-2">
             <p className="text-4xl">🏊</p>
             <p className="text-sm font-semibold text-[color:var(--color-ink-2)]">עוד אין ביקורים מתועדים</p>
-            <p className="text-xs text-[color:var(--color-ink-3)]">לחץ "אני בבריכה" בדף הבית כדי להתחיל לעקוב</p>
+            <p className="text-xs text-[color:var(--color-ink-3)]">לחץ &quot;אני בבריכה&quot; בדף הבית כדי להתחיל לעקוב</p>
           </div>
         )}
 
