@@ -10,7 +10,17 @@ import type { User } from "@supabase/supabase-js";
 
 const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 const FRICTION = 0.93;
+const RESTITUTION = 0.85;
 const WALL_PAD = 7; // % from each edge so avatar stays inside rounded frame
+
+// Avatar radius in pixels derived from frame size — used for collision detection
+function ballRadius(frame: HTMLElement): { W: number; H: number; R: number } {
+  const W = frame.clientWidth;
+  const H = frame.clientHeight;
+  // Avatar visual size is clamp(42px, 8vw, 60px); use 55% of that as collision radius
+  const R = Math.min(W * 0.08, 60) * 0.55;
+  return { W, H, R };
+}
 
 function positionFor(userId: string): { x: number; y: number } {
   let h = 0;
@@ -193,6 +203,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
     const physics = physicsRef.current;
     let anyMoving = false;
 
+    // Step 1: integrate velocity + wall bounce
     for (const p of physics.values()) {
       p.vx *= FRICTION;
       p.vy *= FRICTION;
@@ -205,6 +216,49 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
       if (p.y > 100 - WALL_PAD)  { p.y = 100 - WALL_PAD;  p.vy = -Math.abs(p.vy) * 0.65; }
 
       if (Math.abs(p.vx) > 0.02 || Math.abs(p.vy) > 0.02) anyMoving = true;
+    }
+
+    // Step 2: ball-ball elastic collisions (O(n²) — fine for ≤20 swimmers)
+    if (physics.size > 1) {
+      const frame = poolFrameRef.current;
+      const W = frame?.clientWidth ?? 400;
+      const H = frame?.clientHeight ?? 250;
+      const R = Math.min(W * 0.08, 60) * 0.55;
+      const minDistPx = R * 2;
+      const entries = [...physics.entries()];
+
+      for (let i = 0; i < entries.length; i++) {
+        for (let j = i + 1; j < entries.length; j++) {
+          const [, a] = entries[i];
+          const [, b] = entries[j];
+
+          const dxPx = (b.x - a.x) * (W / 100);
+          const dyPx = (b.y - a.y) * (H / 100);
+          const distPx = Math.sqrt(dxPx * dxPx + dyPx * dyPx);
+          if (distPx >= minDistPx || distPx < 0.0001) continue;
+
+          const nx = dxPx / distPx;
+          const ny = dyPx / distPx;
+
+          // Relative velocity along collision normal (pixel space)
+          const dot = (a.vx - b.vx) * (W / 100) * nx + (a.vy - b.vy) * (H / 100) * ny;
+          if (dot > 0) {
+            const impulse = dot * RESTITUTION;
+            a.vx -= impulse * nx * (100 / W);
+            a.vy -= impulse * ny * (100 / H);
+            b.vx += impulse * nx * (100 / W);
+            b.vy += impulse * ny * (100 / H);
+            anyMoving = true;
+          }
+
+          // Push apart to eliminate overlap
+          const overlap = (minDistPx - distPx) * 0.5;
+          a.x -= overlap * nx * (100 / W);
+          a.y -= overlap * ny * (100 / H);
+          b.x += overlap * nx * (100 / W);
+          b.y += overlap * ny * (100 / H);
+        }
+      }
     }
 
     const snap = new Map<string, { x: number; y: number }>();
@@ -222,6 +276,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
   // Drag handler — converts pointer delta in px to % of pool frame
   const handlePointerDown = useCallback((userId: string, e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
+    cancelAnimationFrame(rafRef.current); // pause physics while dragging
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
 
     let lastX = e.clientX;
@@ -246,11 +301,32 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
       p.vx = dx * 0.6;
       p.vy = dy * 0.6;
 
-      setPositions((prev) => {
-        const next = new Map(prev);
-        next.set(userId, { x: p.x, y: p.y });
-        return next;
-      });
+      // Push any ball the dragged ball overlaps
+      const { W, H, R } = ballRadius(frame);
+      const minDistPx = R * 2;
+      for (const [otherId, q] of physicsRef.current) {
+        if (otherId === userId) continue;
+        const dxPx = (q.x - p.x) * (W / 100);
+        const dyPx = (q.y - p.y) * (H / 100);
+        const distPx = Math.sqrt(dxPx * dxPx + dyPx * dyPx);
+        if (distPx >= minDistPx || distPx < 0.0001) continue;
+        const nx = dxPx / distPx;
+        const ny = dyPx / distPx;
+        // Impart a velocity to the hit ball based on drag speed
+        const dragSpeedPx = Math.sqrt((p.vx * W / 100) ** 2 + (p.vy * H / 100) ** 2);
+        const pushPx = Math.max(dragSpeedPx * 1.5, 1.5);
+        q.vx = nx * pushPx * (100 / W);
+        q.vy = ny * pushPx * (100 / H);
+        // Separate positions
+        const overlapPx = minDistPx - distPx;
+        q.x = Math.max(WALL_PAD, Math.min(100 - WALL_PAD, q.x + overlapPx * nx * (100 / W)));
+        q.y = Math.max(WALL_PAD, Math.min(100 - WALL_PAD, q.y + overlapPx * ny * (100 / H)));
+      }
+
+      // Snapshot all balls (not just the dragged one)
+      const next = new Map<string, { x: number; y: number }>();
+      for (const [id, q] of physicsRef.current) next.set(id, { x: q.x, y: q.y });
+      setPositions(next);
     }
 
     function onUp() {
