@@ -43,9 +43,21 @@ export async function POST(request: Request) {
     .select()
     .single();
 
-  if (groupErr) return NextResponse.json({ error: groupErr.message }, { status: 500 });
+  if (groupErr) {
+    console.error("[groups] insert error:", groupErr.code, groupErr.message);
+    return NextResponse.json({ error: groupErr.message }, { status: 500 });
+  }
 
-  await admin.from("pool_group_members").insert({ group_id: group.id, user_id: user.id });
+  const { error: memberErr } = await admin
+    .from("pool_group_members")
+    .insert({ group_id: group.id, user_id: user.id });
+
+  if (memberErr) {
+    console.error("[groups] member insert error:", memberErr.code, memberErr.message);
+    // Roll back — delete the orphaned group so there's no inconsistency
+    await admin.from("pool_groups").delete().eq("id", group.id);
+    return NextResponse.json({ error: memberErr.message }, { status: 500 });
+  }
 
   return NextResponse.json(group, { status: 201 });
 }

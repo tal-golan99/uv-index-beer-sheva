@@ -22,6 +22,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<PoolGroup[]>([]);
   const [newGroupName, setNewGroupName] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
+  const [createError, setCreateError] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,18 +42,27 @@ export default function GroupsPage() {
   async function createGroup(e: React.FormEvent) {
     e.preventDefault();
     if (!newGroupName.trim()) return;
+    setCreateError("");
     setCreatingGroup(true);
-    const res = await fetch("/api/groups", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newGroupName.trim() }),
-    });
-    if (res.ok) {
-      const g: PoolGroup = await res.json();
-      setGroups((prev) => [g, ...prev]);
-      setNewGroupName("");
+    try {
+      const res = await fetch("/api/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newGroupName.trim() }),
+      });
+      if (res.ok) {
+        const g: PoolGroup = await res.json();
+        setGroups((prev) => [g, ...prev]);
+        setNewGroupName("");
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setCreateError(body.error ?? "לא הצלחנו ליצור את הקבוצה. נסה שוב.");
+      }
+    } catch {
+      setCreateError("שגיאת רשת. בדוק את החיבור ונסה שוב.");
+    } finally {
+      setCreatingGroup(false);
     }
-    setCreatingGroup(false);
   }
 
   async function leaveGroup(groupId: string) {
@@ -99,7 +109,7 @@ export default function GroupsPage() {
               type="text"
               placeholder="שם הקבוצה"
               value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
+              onChange={(e) => { setNewGroupName(e.target.value); setCreateError(""); }}
               maxLength={60}
               className="w-full rounded-xl bg-white px-4 py-3 text-base text-[color:var(--color-ink)] placeholder-[color:var(--color-ink-3)] ring-1 ring-[color:var(--color-pool-200)] outline-none transition-all focus:ring-2 focus:ring-[color:var(--color-pool-400)]"
             />
@@ -112,6 +122,9 @@ export default function GroupsPage() {
               {creatingGroup ? "..." : "צור"}
             </button>
           </form>
+          {createError && (
+            <p className="text-sm font-semibold text-red-500" role="alert">{createError}</p>
+          )}
         </div>
 
         {/* Groups list */}
