@@ -17,5 +17,4 @@ export const LIFESTYLE_PHOTOS: Photo[] = [
   { src: "/pool/life4.jpg", alt: "שיזוף על מזרן" },
   { src: "/pool/life7.jpg", alt: "יום שמשי בבריכה" },
   { src: "/pool/life5.jpg", alt: "רגיעה במים" },
-  { src: "/pool/life6.jpg", alt: "חברים חוגגים בבריכה" },
 ];

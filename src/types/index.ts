@@ -14,6 +14,8 @@ export interface UVForecast {
   today: DailyUV;
   week: DailyUV[];
   fetchedAt: string; // ISO string
+  sunrise: string | null; // ISO datetime for today's sunrise in Asia/Jerusalem
+  sunset: string | null;  // ISO datetime for today's sunset in Asia/Jerusalem
 }
 
 export interface Subscriber {

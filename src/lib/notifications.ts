@@ -54,6 +54,65 @@ export async function notifyCheckinSelf(
   await sendTelegram(chatId, text);
 }
 
+export async function notifyMorningForecast(
+  chatIds: string[],
+  opts: {
+    poolFrom: number | null;
+    poolTo: number | null;
+    peakHour: number | null;
+    peakUV: number | null;
+    funnyLine: string;
+    chartUrl: string;
+    inviteButtonUrl: string;
+  }
+): Promise<void> {
+  const poolLine = opts.poolFrom !== null && opts.poolTo !== null
+    ? `🏊 זמן בריכה: ${opts.poolFrom}:00–${opts.poolTo}:00 (UV ≥ 9)`
+    : "🏊 UV לא מגיע ל-9 היום — אבל הבריכה עדיין קיימת";
+
+  const peakLine = opts.peakHour !== null && opts.peakUV !== null
+    ? `⚡ שיא: ${opts.peakHour}:00 עם UV ${opts.peakUV}`
+    : "";
+
+  const caption = [
+    "☀️ בוקר טוב לכל השזופים והשזופות ☀️",
+    "",
+    poolLine,
+    peakLine,
+    "",
+    opts.funnyLine,
+  ].filter(Boolean).join("\n");
+
+  const inlineKeyboard = {
+    inline_keyboard: [[
+      { text: "זמן חברים לבריכה 📅", url: opts.inviteButtonUrl },
+    ]],
+  };
+
+  await Promise.allSettled(
+    chatIds.map((id) => sendTelegramPhoto(id, opts.chartUrl, caption, inlineKeyboard))
+  );
+}
+
+async function sendTelegramPhoto(
+  chatId: string,
+  photoUrl: string,
+  caption: string,
+  replyMarkup?: object
+): Promise<void> {
+  const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl, caption };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  const res = await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) console.error(`[sendTelegramPhoto] Telegram error ${res.status} for chat ${chatId}`);
+}
+
 async function sendTelegram(chatId: string, text: string): Promise<void> {
   const res = await fetch(
     `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,

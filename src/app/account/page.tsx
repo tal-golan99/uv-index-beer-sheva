@@ -8,6 +8,13 @@ import Wordmark from "@/components/Wordmark";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/types";
 
+interface PoolGroup {
+  id: string;
+  name: string;
+  invite_code: string;
+  created_by: string | null;
+}
+
 function TelegramIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" xmlns="http://www.w3.org/2000/svg">
@@ -59,6 +66,13 @@ export default function AccountPage() {
   const [showTelegramSetup, setShowTelegramSetup] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Groups state
+  const [groups, setGroups] = useState<PoolGroup[]>([]);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [groupsSection, setGroupsSection] = useState(false);
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.replace("/register"); return; }
@@ -76,7 +90,46 @@ export default function AccountPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetch("/api/groups").then((r) => r.json()).then((data) => {
+      if (Array.isArray(data)) setGroups(data as PoolGroup[]);
+    }).catch(() => {});
+
+    // If redirected from join page, open groups section automatically.
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("group")) {
+      setGroupsSection(true);
+    }
   }, [supabase, router]);
+
+  async function createGroup(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newGroupName.trim()) return;
+    setCreatingGroup(true);
+    const res = await fetch("/api/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newGroupName.trim() }),
+    });
+    if (res.ok) {
+      const g: PoolGroup = await res.json();
+      setGroups((prev) => [g, ...prev]);
+      setNewGroupName("");
+    }
+    setCreatingGroup(false);
+  }
+
+  async function leaveGroup(groupId: string) {
+    await fetch(`/api/groups/${groupId}`, { method: "DELETE" });
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+  }
+
+  function copyInviteLink(code: string) {
+    const url = `${window.location.origin}/groups/${code}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    });
+  }
 
   // Start Telegram setup when user clicks Connect
   async function startTelegramSetup() {
@@ -137,10 +190,11 @@ export default function AccountPage() {
           const { error: uploadError } = await supabase.storage
             .from("avatars")
             .upload(path, avatarFile, { upsert: true });
-          if (!uploadError) {
-            const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-            avatarUrl = data.publicUrl;
+          if (uploadError) {
+            throw new Error(`שגיאה בהעלאת התמונה: ${uploadError.message}`);
           }
+          const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+          avatarUrl = data.publicUrl;
         }
       }
 
@@ -340,6 +394,96 @@ export default function AccountPage() {
             {saving ? "שומר..." : "שמור שינויים"}
           </button>
         </form>
+
+        {/* Groups section */}
+        <div className="rounded-3xl bg-white ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setGroupsSection((o) => !o)}
+            className="flex w-full items-center justify-between px-6 py-4"
+          >
+            <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">🏊 הקבוצות שלי</h2>
+            <span className="text-[color:var(--color-ink-3)] text-sm">{groupsSection ? "▲" : "▼"}</span>
+          </button>
+
+          {groupsSection && (
+            <div className="border-t border-[color:var(--color-pool-100)] px-6 pb-6 pt-4 space-y-4">
+              {/* Create group */}
+              <form onSubmit={createGroup} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="שם הקבוצה"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  maxLength={60}
+                  className={inputClass}
+                />
+                <button
+                  type="submit"
+                  disabled={creatingGroup || !newGroupName.trim()}
+                  className="shrink-0 rounded-2xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+                  style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
+                >
+                  {creatingGroup ? "..." : "צור"}
+                </button>
+              </form>
+
+              {/* Groups list */}
+              {groups.length === 0 ? (
+                <p className="text-center text-sm text-[color:var(--color-ink-3)]">עוד אין קבוצות</p>
+              ) : (
+                <div className="space-y-3">
+                  {groups.map((g) => {
+                    const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/groups/${g.invite_code}`;
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(`הצטרף לקבוצת הבריכה "${g.name}" 🏊\n${inviteUrl}`)}`;
+                    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(`הצטרף לקבוצת הבריכה "${g.name}" 🏊`)}`;
+
+                    return (
+                      <div key={g.id} className="rounded-2xl bg-[color:var(--color-pool-50)] p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-extrabold text-[color:var(--color-ink)]">{g.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => leaveGroup(g.id)}
+                            className="text-xs font-semibold text-red-500 hover:underline"
+                          >
+                            עזוב
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => copyInviteLink(g.invite_code)}
+                            className="flex-1 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)] hover:ring-[color:var(--color-pool-400)] transition-all"
+                          >
+                            {copiedCode === g.invite_code ? "✓ הועתק!" : "📋 העתק לינק"}
+                          </button>
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-xl bg-green-500 px-3 py-2 text-xs font-bold text-white hover:bg-green-600 transition-colors"
+                          >
+                            WhatsApp
+                          </a>
+                          <a
+                            href={tgUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-xl px-3 py-2 text-xs font-bold text-white transition-colors"
+                            style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                          >
+                            Telegram
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <button
           type="button"

@@ -1,7 +1,8 @@
+import { createClient } from "@supabase/supabase-js";
 import { fetchUVForecast } from "@/lib/openmeteo";
 import HeaderAuth from "@/components/HeaderAuth";
 import Wordmark from "@/components/Wordmark";
-import { BANNER_SENTENCES } from "@/lib/banner";
+import { bannerForToday } from "@/lib/banner";
 import { LIFESTYLE_PHOTOS } from "@/lib/photos";
 import BodyTheme from "@/components/BodyTheme";
 import Reveal from "@/components/Reveal";
@@ -14,14 +15,70 @@ import UVStats from "@/components/UVStats";
 import DailyChart from "@/components/DailyChart";
 import WeeklyChart from "@/components/WeeklyChart";
 import PoolBuddiesCTA from "@/components/PoolBuddiesCTA";
+import PoolKingBanner from "@/components/PoolKingBanner";
+import ShakeHananPopup from "@/components/ShakeHananPopup";
+import EquipmentSection from "@/components/EquipmentSection";
+import CommentsSection from "@/components/CommentsSection";
 
 export const revalidate = 1800;
+
+async function getPoolKing(): Promise<{ name: string; avatarUrl: string | null; totalHours: number } | null> {
+  try {
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    const since = sevenDaysAgo.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+
+    const { data } = await admin
+      .from("pool_visits")
+      .select("user_id, duration_minutes")
+      .gte("visit_date", since)
+      .not("duration_minutes", "is", null);
+
+    if (!data?.length) return null;
+
+    const totals = new Map<string, number>();
+    for (const row of data as { user_id: string; duration_minutes: number }[]) {
+      totals.set(row.user_id, (totals.get(row.user_id) ?? 0) + row.duration_minutes);
+    }
+
+    const [kingId, kingMinutes] = [...totals.entries()].reduce((a, b) => (b[1] > a[1] ? b : a));
+    if (kingMinutes < 1) return null;
+
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("display_name, avatar_url")
+      .eq("id", kingId)
+      .maybeSingle();
+
+    return {
+      name: (profile?.display_name as string | null) ?? "שחיין",
+      avatarUrl: (profile?.avatar_url as string | null) ?? null,
+      totalHours: kingMinutes / 60,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default async function HomePage() {
   const forecast = await fetchUVForecast();
   const poolTime = forecast.current >= 9;
-  // Pinned for now; rotation (bannerForToday) is ready once all 20 lines land.
-  const banner = BANNER_SENTENCES[0];
+  const banner = bannerForToday();
+
+  // Pool King — user with most total pool time in the last 7 days.
+  const poolKing = await getPoolKing();
+
+  // Night mode: after sunset or before sunrise in Israel.
+  const nowMs = Date.now();
+  const sunriseMs = forecast.sunrise ? new Date(forecast.sunrise).getTime() : null;
+  const sunsetMs  = forecast.sunset  ? new Date(forecast.sunset).getTime()  : null;
+  const nightMode = sunriseMs !== null && sunsetMs !== null
+    ? nowMs < sunriseMs || nowMs > sunsetMs
+    : false;
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString("he-IL", {
@@ -36,7 +93,8 @@ export default async function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      <BodyTheme poolTime={poolTime} />
+      <BodyTheme poolTime={poolTime} nightMode={nightMode} />
+      <ShakeHananPopup />
 
       {/* Decorative sun blob — centered to match the background gradient's 50% -10% radial */}
       <div
@@ -57,6 +115,17 @@ export default async function HomePage() {
           <HeaderAuth />
         </header>
 
+        {/* Pool King banner */}
+        {poolKing && (
+          <div className="mt-4">
+            <PoolKingBanner
+              name={poolKing.name}
+              avatarUrl={poolKing.avatarUrl}
+              totalHours={poolKing.totalHours}
+            />
+          </div>
+        )}
+
         {/* Daily one-liner */}
         <div className="mt-5">
           <RotatingBanner sentence={banner} />
@@ -75,6 +144,11 @@ export default async function HomePage() {
         {/* The social payoff — promoted right under the verdict */}
         <Reveal className="mt-8 block md:mt-12">
           <PoolPresence currentUV={forecast.current} />
+        </Reveal>
+
+        {/* Equipment sharing */}
+        <Reveal className="mt-6 block">
+          <EquipmentSection />
         </Reveal>
 
         {/* The evidence zone — charts + stats grouped in one tinted band, not four
@@ -97,6 +171,11 @@ export default async function HomePage() {
           </section>
         </Reveal>
 
+        {/* Comments */}
+        <Reveal className="mt-8 block md:mt-12">
+          <CommentsSection />
+        </Reveal>
+
         {/* Bottom CTA — hidden for logged-in users */}
         <Reveal className="mt-8 block md:mt-12">
           <PoolBuddiesCTA />
@@ -112,6 +191,8 @@ export default async function HomePage() {
           })}
           {" · "}
           <span className="opacity-70">מקור: Open-Meteo</span>
+          {" · "}
+          <a href="/more" className="font-bold text-[color:var(--color-pool-600)] hover:underline">More UV ✨</a>
         </footer>
       </div>
     </div>

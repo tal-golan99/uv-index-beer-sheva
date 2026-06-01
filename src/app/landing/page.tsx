@@ -154,8 +154,8 @@ export default function LandingPage() {
         </Reveal>
         <Reveal once>
           <FeatureRow
-            img="/pool/life6.jpg"
-            alt="חברים חוגגים בבריכה"
+            img="/pool/life4.jpg"
+            alt="שיזוף על שפת הבריכה"
             icon={<PaperPlaneTilt weight="duotone" size={28} color="var(--color-pool-600)" />}
             title="התראה לפני השיא"
             desc="הבוט בטלגרם שולח הודעה שעה לפני שה-UV נוגע ב-9. עד שאחרים מבינים שיצא שמש, אתה כבר עם המגבת ביד."

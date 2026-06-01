@@ -7,15 +7,15 @@ const TIMEZONE = "Asia/Jerusalem";
 
 interface OpenMeteoResponse {
   hourly: { time: string[]; uv_index: number[] };
-  daily:  { time: string[]; uv_index_max: number[] };
+  daily:  { time: string[]; uv_index_max: number[]; sunrise: string[]; sunset: string[] };
 }
 
-async function fetchOpenMeteoRaw(): Promise<{ week: DailyUV[]; current: number }> {
+async function fetchOpenMeteoRaw(): Promise<{ week: DailyUV[]; current: number; sunrise: string | null; sunset: string | null }> {
   const params = new URLSearchParams({
     latitude:      BEER_SHEVA.latitude.toString(),
     longitude:     BEER_SHEVA.longitude.toString(),
     hourly:        "uv_index",
-    daily:         "uv_index_max",
+    daily:         "uv_index_max,sunrise,sunset",
     forecast_days: "7",
     timezone:      TIMEZONE,
   });
@@ -52,7 +52,12 @@ async function fetchOpenMeteoRaw(): Promise<{ week: DailyUV[]; current: number }
     .replace(" ", "T");
   const currentHour = pairs.findLast((p) => p.time <= nowStr);
 
-  return { week, current: currentHour?.uv_index ?? 0 };
+  return {
+    week,
+    current: currentHour?.uv_index ?? 0,
+    sunrise: data.daily.sunrise?.[0] ?? null,
+    sunset:  data.daily.sunset?.[0] ?? null,
+  };
 }
 
 // ── wttr.in: daily max + 8 hourly points per day (matches Apple / WHO) ────
@@ -126,6 +131,8 @@ export async function fetchUVForecast(): Promise<UVForecast> {
     today:     week[0],
     week,
     fetchedAt: new Date().toISOString(),
+    sunrise:   omData.sunrise,
+    sunset:    omData.sunset,
   };
 }
 

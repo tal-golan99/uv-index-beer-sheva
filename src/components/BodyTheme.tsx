@@ -3,15 +3,19 @@
 import { useEffect } from "react";
 
 /**
- * Toggles the `pool-time` class on <body> (UV >= 9 festive theme).
- * Lives as a tiny client component because the page itself is a Server Component
- * and the themed background gradient is defined on <body> in globals.css.
+ * Toggles body classes for theme variants:
+ * - `pool-time`: UV >= 9 (warm honey gradient)
+ * - `night-mode`: after sunset / before sunrise in Israel
  */
-export default function BodyTheme({ poolTime }: { poolTime: boolean }) {
+export default function BodyTheme({ poolTime, nightMode }: { poolTime: boolean; nightMode: boolean }) {
   useEffect(() => {
     document.body.classList.toggle("pool-time", poolTime);
-    return () => document.body.classList.remove("pool-time");
-  }, [poolTime]);
+    document.body.classList.toggle("night-mode", nightMode);
+    return () => {
+      document.body.classList.remove("pool-time");
+      document.body.classList.remove("night-mode");
+    };
+  }, [poolTime, nightMode]);
 
   return null;
 }

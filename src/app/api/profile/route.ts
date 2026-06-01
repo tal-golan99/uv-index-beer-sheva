@@ -69,7 +69,9 @@ export async function PUT(request: Request) {
     if (key in body) patch[key] = body[key];
   }
 
-  const { data, error } = await getAdmin()
+  const admin = getAdmin();
+
+  const { data, error } = await admin
     .from("profiles")
     .update(patch)
     .eq("id", user.id)
@@ -80,5 +82,14 @@ export async function PUT(request: Request) {
     console.error("[profile PUT] update error", { userId: user.id, code: error.code, message: error.message, details: error.details });
     return NextResponse.json({ error: "שגיאה בשמירת הפרופיל." }, { status: 500 });
   }
+
+  // Keep pool_presence in sync so the live pool shows the updated avatar immediately.
+  if ("avatar_url" in patch) {
+    await admin
+      .from("pool_presence")
+      .update({ avatar_url: patch.avatar_url ?? null })
+      .eq("user_id", user.id);
+  }
+
   return NextResponse.json(data);
 }

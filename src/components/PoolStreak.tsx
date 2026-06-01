@@ -33,6 +33,7 @@ export default function PoolStreak() {
   const [authed, setAuthed] = useState(false);
   const [days, setDays] = useState<DaySquare[]>([]);
   const [daysSince, setDaysSince] = useState<number | null>(null);
+  const [avgMinutes, setAvgMinutes] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +78,7 @@ export default function PoolStreak() {
         dateWindow.push(d.toISOString().slice(0, 10));
       }
 
-      const [weekRes, lastRes] = await Promise.all([
+      const [weekRes, lastRes, avgRes] = await Promise.all([
         supabase
           .from("pool_visits")
           .select("visit_date")
@@ -89,6 +90,7 @@ export default function PoolStreak() {
           .eq("user_id", userId)
           .order("visit_date", { ascending: false })
           .limit(1),
+        fetch("/api/stats/weekly").then((r) => r.json()).catch(() => ({ avg_minutes: null })),
       ]);
 
       if (cancelled) return;
@@ -104,6 +106,7 @@ export default function PoolStreak() {
 
       const last = lastRes.data?.[0]?.visit_date as string | undefined;
       setDaysSince(last ? daysBetween(today, last) : null);
+      setAvgMinutes((avgRes as { avg_minutes: number | null }).avg_minutes ?? null);
       setLoading(false);
     }
 
@@ -193,6 +196,17 @@ export default function PoolStreak() {
           );
         })}
       </div>
+      {/* Weekly average */}
+      {avgMinutes !== null && (
+        <p className="text-center text-xs font-semibold text-[color:var(--color-ink-3)]">
+          ממוצע שבועי:{" "}
+          <span className="text-[color:var(--color-pool-600)]">
+            {avgMinutes >= 60
+              ? `${Math.floor(avgMinutes / 60)}ש׳ ${avgMinutes % 60 > 0 ? `${avgMinutes % 60}ד׳` : ""}`
+              : `${avgMinutes} דקות`}
+          </span>
+        </p>
+      )}
     </section>
   );
 }

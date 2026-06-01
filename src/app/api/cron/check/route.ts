@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { fetchUVForecast, findThresholdHour } from "@/lib/openmeteo";
 import {
   getActiveProfileSubscribers,
@@ -6,7 +7,15 @@ import {
   getPendingAlerts,
   markAlertSent,
 } from "@/lib/supabase";
-import { notifySubscribers } from "@/lib/notifications";
+import { notifySubscribers, notifyMorningForecast } from "@/lib/notifications";
+import { getMorningMessage } from "@/lib/morning-messages";
+
+function getAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +42,12 @@ export async function GET(req: NextRequest) {
 
   try {
     if (isEarlyMorning) {
-      await seedTodayAlert(todayStr);
+      await seedTodayAlert(todayStr, now);
     }
 
     if (isDispatchHour) {
       await dispatchPendingAlerts(now);
+      await autoCheckoutIfLowUV();
     }
 
     return NextResponse.json({ ok: true, ts: now.toISOString(), israelHour });
@@ -47,22 +57,58 @@ export async function GET(req: NextRequest) {
   }
 }
 
-async function seedTodayAlert(date: string) {
+async function seedTodayAlert(date: string, now: Date) {
   const forecast = await fetchUVForecast();
   const hit = findThresholdHour(forecast.today, THRESHOLD);
-  if (!hit) return;
 
-  const thresholdAt = new Date(hit.time);
-  const warnAt = new Date(thresholdAt.getTime() - 60 * 60 * 1000);
+  if (hit) {
+    const thresholdAt = new Date(hit.time);
+    const warnAt = new Date(thresholdAt.getTime() - 60 * 60 * 1000);
+    await upsertDailyAlert({
+      date,
+      warn_at: warnAt.toISOString(),
+      threshold_at: thresholdAt.toISOString(),
+      max_uv: forecast.today.max_uv,
+      warn_sent: false,
+      threshold_sent: false,
+    });
+  }
 
-  await upsertDailyAlert({
-    date,
-    warn_at: warnAt.toISOString(),
-    threshold_at: thresholdAt.toISOString(),
-    max_uv: forecast.today.max_uv,
-    warn_sent: false,
-    threshold_sent: false,
+  // Morning Telegram broadcast — send daily UV chart to all opted-in users.
+  const subscribers = await getActiveProfileSubscribers();
+  if (!subscribers.length) return;
+
+  const chatIds = subscribers.map((s) => s.telegram_chat_id!).filter(Boolean);
+  const chartHours = forecast.today.hours.filter((h) => {
+    const hr = parseInt(h.time.slice(11, 13));
+    return hr >= 8 && hr <= 17;
   });
+  const poolHours = chartHours.filter((h) => h.uv_index >= 9);
+  const poolFrom = poolHours[0] ? parseInt(poolHours[0].time.slice(11, 13)) : null;
+  const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) : null;
+  const peak     = chartHours.reduce((a, b) => (a.uv_index >= b.uv_index ? a : b), chartHours[0]);
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  await notifyMorningForecast(chatIds, {
+    poolFrom,
+    poolTo,
+    peakHour: peak ? parseInt(peak.time.slice(11, 13)) : null,
+    peakUV: peak?.uv_index ?? null,
+    funnyLine: getMorningMessage(now),
+    chartUrl: `${appUrl}/api/og/daily-uv`,
+    inviteButtonUrl: appUrl,
+  });
+}
+
+async function autoCheckoutIfLowUV() {
+  const forecast = await fetchUVForecast();
+  if (forecast.current >= 6) return;
+
+  const admin = getAdmin();
+  const { data: present } = await admin.from("pool_presence").select("user_id").limit(1);
+  if (!present?.length) return;
+
+  await admin.from("pool_presence").delete().not("user_id", "is", null);
 }
 
 async function dispatchPendingAlerts(now: Date) {

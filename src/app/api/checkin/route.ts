@@ -30,8 +30,28 @@ export async function POST(request: Request) {
   if (staleError) console.error("[checkin] stale cleanup error", { code: staleError.code, message: staleError.message });
 
   if (action === "out") {
+    // Calculate visit duration before deleting the presence row.
+    const { data: presence } = await admin
+      .from("pool_presence")
+      .select("checked_in_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const { error: delError } = await admin.from("pool_presence").delete().eq("user_id", user.id);
     if (delError) console.error("[checkin] delete error", { userId: user.id, code: delError.code, message: delError.message });
+
+    if (presence?.checked_in_at) {
+      const durationMinutes = Math.round(
+        (Date.now() - new Date(presence.checked_in_at).getTime()) / 60_000
+      );
+      const visitDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+      await admin
+        .from("pool_visits")
+        .update({ duration_minutes: durationMinutes })
+        .eq("user_id", user.id)
+        .eq("visit_date", visitDate);
+    }
+
     return NextResponse.json({ ok: true, action: "out" });
   }
 
@@ -67,28 +87,61 @@ export async function POST(request: Request) {
   // Record today's visit in history (Asia/Jerusalem date). Ignore if already logged today.
   // A failure here must not break check-in, so we only log it.
   const visitDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const nowIso = new Date().toISOString();
   const { error: visitError } = await admin
     .from("pool_visits")
     .upsert(
-      { user_id: user.id, visit_date: visitDate },
+      { user_id: user.id, visit_date: visitDate, checked_in_at: nowIso },
       { onConflict: "user_id,visit_date", ignoreDuplicates: true }
     );
   if (visitError) console.error("[checkin] visit log error", { userId: user.id, code: visitError.code, message: visitError.message });
 
-  // Notify all Telegram-registered users (except the person checking in)
+  // Notify Telegram users: prefer group members if the checker-in belongs to any group,
+  // otherwise broadcast to all opted-in users.
   try {
     const { data: presenceOthers } = await admin
       .from("pool_presence")
       .select("user_id")
       .neq("user_id", user.id);
 
-    const { data: allTelegramProfiles } = await admin
-      .from("profiles")
-      .select("telegram_chat_id")
-      .neq("id", user.id)
-      .not("telegram_chat_id", "is", null);
+    // Find all groups this user belongs to.
+    const { data: memberRows } = await admin
+      .from("pool_group_members")
+      .select("group_id")
+      .eq("user_id", user.id);
 
-    const chatIds = (allTelegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
+    const groupIds = (memberRows ?? []).map((r) => r.group_id as string);
+    let recipientUserIds: string[] = [];
+
+    if (groupIds.length > 0) {
+      // Collect all members of all those groups (excluding the checker-in).
+      const { data: groupMembers } = await admin
+        .from("pool_group_members")
+        .select("user_id")
+        .in("group_id", groupIds)
+        .neq("user_id", user.id);
+      recipientUserIds = [...new Set((groupMembers ?? []).map((r) => r.user_id as string))];
+    }
+
+    let chatIds: string[];
+
+    if (recipientUserIds.length > 0) {
+      const { data: groupProfiles } = await admin
+        .from("profiles")
+        .select("telegram_chat_id")
+        .in("id", recipientUserIds)
+        .not("telegram_chat_id", "is", null);
+      chatIds = (groupProfiles ?? []).map((p) => p.telegram_chat_id as string);
+    } else {
+      // No groups — fall back to broadcasting to everyone.
+      const { data: allTelegramProfiles } = await admin
+        .from("profiles")
+        .select("telegram_chat_id")
+        .neq("id", user.id)
+        .not("telegram_chat_id", "is", null);
+      chatIds = (allTelegramProfiles ?? []).map((p) => p.telegram_chat_id as string);
+    }
+
     if (chatIds.length > 0) await notifyPoolEntry(displayName, chatIds);
 
     // Notify the checking-in user themselves as a confirmation

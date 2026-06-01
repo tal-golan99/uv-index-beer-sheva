@@ -82,6 +82,27 @@ body.pool-time {
     linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 62%);
 }
 
+/* Night mode — after sunset / before sunrise in Israel */
+body.night-mode {
+  --bg-top:   #0c1b29;
+  --bg-bottom: #111e2c;
+  --color-ink:   #e8f4fb;
+  --color-ink-2: #94b8cc;
+  --color-ink-3: #5a7d94;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -8%, rgba(14, 147, 212, 0.18), transparent 68%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 60%);
+}
+body.night-mode .surface-band {
+  background:
+    radial-gradient(125% 100% at 50% 0%, rgba(14, 147, 212, 0.12), transparent 68%),
+    rgba(14, 30, 44, 0.85);
+}
+body.night-mode .radius-card,
+body.night-mode .radius-nested {
+  background: rgba(14, 30, 44, 0.85);
+}
+
 /* Hide scrollbar but keep scrolling */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
