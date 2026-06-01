@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     const poolLine = poolFrom !== null && poolTo !== null
       ? `🏊 זמן בריכה: ${poolFrom}:00–${poolTo}:00 (UV ≥ 9)`
-      : "🏊 UV לא מגיע ל-9 היום — אבל הבריכה עדיין קיימת";
+      : "";
     const peakLine = peakHour !== null && peak ? `⚡ שיא: ${peakHour}:00 עם UV ${peak.uv_index}` : "";
     const funnyLine = getMorningMessage(now);
 

@@ -85,7 +85,7 @@ export async function GET() {
 
   const poolText = poolFrom !== null && poolTo !== null
     ? `${poolFrom}:00–${poolTo}:00 (UV ≥ 9) 🏊`
-    : "UV לא מגיע ל-9 היום 🏊";
+    : "";
   const peakText = peak
     ? `UV ${peak.uv_index.toFixed(0)} · ${parseInt(peak.time.slice(11, 13))}:00 שיא ⚡`
     : "";

@@ -68,7 +68,7 @@ export async function notifyMorningForecast(
 ): Promise<void> {
   const poolLine = opts.poolFrom !== null && opts.poolTo !== null
     ? `🏊 זמן בריכה: ${opts.poolFrom}:00–${opts.poolTo}:00 (UV ≥ 9)`
-    : "🏊 UV לא מגיע ל-9 היום — אבל הבריכה עדיין קיימת";
+    : "";
 
   const peakLine = opts.peakHour !== null && opts.peakUV !== null
     ? `⚡ שיא: ${opts.peakHour}:00 עם UV ${opts.peakUV}`
