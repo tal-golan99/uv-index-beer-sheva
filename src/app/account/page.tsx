@@ -365,7 +365,7 @@ export default function AccountPage() {
           {/* Telegram */}
           <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">התראות טלגרם</h2>
+              <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">טלגרם</h2>
               {telegramConnected && (
                 <button
                   type="button"
@@ -537,9 +537,6 @@ export default function AccountPage() {
             </div>
           )}
         </div>
-
-        {/* More UV waitlist */}
-        <MoreUVWaitlistToggle supabase={supabase} />
 
         {/* Comment */}
         <div className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">

@@ -31,6 +31,7 @@ export default function EquipmentSection() {
   const [mode, setMode] = useState<Mode>("bring");
   const [customText, setCustomText] = useState("");
   const [announced, setAnnounced] = useState<Set<string>>(new Set());
+  const [asked, setAsked] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -63,22 +64,25 @@ export default function EquipmentSection() {
   async function askAbout(item: string) {
     if (!authed || posting) return;
     setPosting(item);
-    await fetch("/api/equipment", {
+    const res = await fetch("/api/equipment/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: `מי מביא ${item}?` }),
+      body: JSON.stringify({ item }),
     });
     setPosting(null);
-    await loadQueries();
+    if (res.ok) {
+      setAsked((prev) => new Set([...prev, item]));
+      setTimeout(() => setAsked((prev) => { const s = new Set(prev); s.delete(item); return s; }), 4000);
+    }
   }
 
   async function sendCustom() {
     if (!authed || !customText.trim() || posting) return;
     setPosting("text");
-    await fetch("/api/equipment", {
+    await fetch("/api/equipment/bring", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: customText.trim() }),
+      body: JSON.stringify({ item: customText.trim() }),
     });
     setPosting(null);
     setCustomText("");
@@ -86,7 +90,12 @@ export default function EquipmentSection() {
   }
 
   const generalQuery = queries.find((q) => q.message === null);
-  const questionQueries = queries.filter((q) => q.message !== null);
+
+  const TABS: { key: Mode; label: string }[] = [
+    { key: "bring", label: "אני מביא" },
+    { key: "ask",   label: "שואל" },
+    { key: "text",  label: "טקסט" },
+  ];
 
   return (
     <section className="radius-card shadow-pool-sm bg-white ring-1 ring-[color:var(--color-pool-100)] overflow-hidden">
@@ -106,11 +115,7 @@ export default function EquipmentSection() {
             <>
               {/* Mode selector */}
               <div className="flex rounded-full bg-[color:var(--color-pool-50)] p-0.5 ring-1 ring-[color:var(--color-pool-100)]">
-                {([
-                  { key: "bring", label: "🎒 אני מביא" },
-                  { key: "ask",   label: "❓ שואל" },
-                  { key: "text",  label: "✏️ חופשי" },
-                ] as { key: Mode; label: string }[]).map(({ key, label }) => (
+                {TABS.map(({ key, label }) => (
                   <button
                     key={key}
                     onClick={() => setMode(key)}
@@ -133,7 +138,7 @@ export default function EquipmentSection() {
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_ITEMS.map((item) => {
-                      const done = announced.has(item);
+                      const done = mode === "bring" ? announced.has(item) : asked.has(item);
                       return (
                         <button
                           key={item}
@@ -150,28 +155,38 @@ export default function EquipmentSection() {
                       );
                     })}
                   </div>
+                  {mode === "ask" && (
+                    <p className="text-[11px] text-[color:var(--color-ink-3)]">
+                      תישלח הודעה לכולם בטלגרם
+                    </p>
+                  )}
                 </div>
               )}
 
               {/* Free text mode */}
               {mode === "text" && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={customText}
-                    onChange={(e) => setCustomText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendCustom()}
-                    placeholder="כתוב שאלה חופשית..."
-                    className="flex-1 rounded-2xl border border-[color:var(--color-pool-200)] px-4 py-2 text-sm outline-none focus:border-[color:var(--color-pool-400)] text-right"
-                    dir="rtl"
-                  />
-                  <button
-                    onClick={sendCustom}
-                    disabled={!customText.trim() || posting !== null}
-                    className="rounded-2xl bg-[color:var(--color-pool-600)] px-4 py-2 text-xs font-bold text-white disabled:opacity-50 hover:bg-[color:var(--color-pool-700)] transition-colors"
-                  >
-                    {posting === "text" ? "..." : "שלח"}
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && sendCustom()}
+                      placeholder="כתוב מה אתה מביא..."
+                      className="flex-1 rounded-2xl border border-[color:var(--color-pool-200)] px-4 py-2 text-sm outline-none focus:border-[color:var(--color-pool-400)] text-right"
+                      dir="rtl"
+                    />
+                    <button
+                      onClick={sendCustom}
+                      disabled={!customText.trim() || posting !== null}
+                      className="rounded-2xl bg-[color:var(--color-pool-600)] px-4 py-2 text-xs font-bold text-white disabled:opacity-50 hover:bg-[color:var(--color-pool-700)] transition-colors"
+                    >
+                      {posting === "text" ? "..." : "שלח"}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[color:var(--color-ink-3)]">
+                    תישלח הודעה לכולם בטלגרם
+                  </p>
                 </div>
               )}
             </>
@@ -182,7 +197,7 @@ export default function EquipmentSection() {
             </p>
           )}
 
-          {/* Shared "brings" list */}
+          {/* "Brings" list — only from the shared daily query */}
           {generalQuery && generalQuery.pool_equipment_responses.length > 0 && (
             <div className="rounded-2xl bg-[color:var(--color-pool-50)] p-3">
               <div className="flex flex-wrap gap-1.5">
@@ -195,44 +210,6 @@ export default function EquipmentSection() {
                   </span>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Question queries */}
-          {questionQueries.length > 0 && (
-            <div className="space-y-3">
-              {questionQueries.map((q) => (
-                <div key={q.id} className="rounded-2xl bg-[color:var(--color-pool-50)] p-3 space-y-2">
-                  {q.message && (
-                    <p className="text-sm font-semibold text-[color:var(--color-ink)]">{q.message}</p>
-                  )}
-                  {q.pool_equipment_responses.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {q.pool_equipment_responses.map((r) => (
-                        <span
-                          key={r.id}
-                          className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)]"
-                        >
-                          {r.profiles?.display_name ?? "מישהו"}: {r.item}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {authed && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {PRESET_ITEMS.map((item) => (
-                        <button
-                          key={item}
-                          onClick={() => announce(item)}
-                          className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[color:var(--color-ink-2)] ring-1 ring-[color:var(--color-pool-200)] hover:ring-[color:var(--color-pool-400)] transition-all"
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
           )}
 
