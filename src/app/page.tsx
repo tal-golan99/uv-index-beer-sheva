@@ -19,6 +19,7 @@ import PoolKingBanner from "@/components/PoolKingBanner";
 import ShakeHananPopup from "@/components/ShakeHananPopup";
 import EquipmentSection from "@/components/EquipmentSection";
 import CommentsSection from "@/components/CommentsSection";
+import MoreUVButton from "@/components/MoreUVButton";
 
 export const revalidate = 1800;
 
@@ -106,13 +107,16 @@ export default async function HomePage() {
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 md:py-10">
         <h1 className="sr-only">UV Pool — מדד UV ומי נמצא בבריכה בבאר שבע</h1>
 
-        {/* Top bar: wordmark + date | auth */}
+        {/* Top bar: wordmark + date | More UV button + auth */}
         <header className="flex items-center justify-between gap-3">
           <div>
             <Wordmark size="md" city />
             <p className="mt-1.5 text-xs text-[color:var(--color-ink-2)] md:text-sm">{dateLabel}</p>
           </div>
-          <HeaderAuth />
+          <div className="flex items-center gap-2">
+            <MoreUVButton />
+            <HeaderAuth />
+          </div>
         </header>
 
         {/* Pool King banner */}

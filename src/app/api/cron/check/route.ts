@@ -83,9 +83,11 @@ async function seedTodayAlert(date: string, now: Date) {
     const hr = parseInt(h.time.slice(11, 13));
     return hr >= 8 && hr <= 17;
   });
-  const poolHours = chartHours.filter((h) => h.uv_index >= 9);
+  // Use UV >= 8 to detect pool hours — hourly averages near 8 will cross 9 during the hour.
+  // poolTo + 1 because the last hour is a full 60 min block.
+  const poolHours = chartHours.filter((h) => h.uv_index >= 8);
   const poolFrom = poolHours[0] ? parseInt(poolHours[0].time.slice(11, 13)) : null;
-  const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) : null;
+  const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;
   const peak     = chartHours.reduce((a, b) => (a.uv_index >= b.uv_index ? a : b), chartHours[0]);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
