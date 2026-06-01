@@ -5,22 +5,20 @@ export default function MoreUVButton() {
   return (
     <Link
       href="/more"
-      title="More UV ✨"
       aria-label="More UV — מנוי פרמיום"
-      className="flex flex-col items-center gap-0.5 transition-opacity hover:opacity-80"
+      className="flex items-center gap-2 rounded-full px-3 py-1.5 text-white font-bold text-sm shadow-md hover:opacity-90 active:scale-95 transition-all shrink-0"
+      style={{ background: "linear-gradient(90deg, var(--color-pool-600), #f7bd24)" }}
     >
-      <div className="relative h-9 w-9 shrink-0 rounded-full overflow-hidden ring-2 ring-[color:var(--color-sun-300)] hover:ring-[color:var(--color-sun-400)] transition-all shadow-sm">
+      <div className="relative h-7 w-7 rounded-full overflow-hidden shrink-0 ring-2 ring-white/40">
         <Image
           src="/more/IMG_9931.JPG"
-          alt="More UV"
+          alt=""
           fill
-          sizes="36px"
+          sizes="28px"
           className="object-cover"
         />
       </div>
-      <span className="text-[9px] font-black text-[color:var(--color-pool-600)] leading-none tracking-tight">
-        More UV
-      </span>
+      <span className="whitespace-nowrap">More UV ✨</span>
     </Link>
   );
 }
