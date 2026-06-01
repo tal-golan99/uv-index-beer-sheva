@@ -67,10 +67,10 @@ export default function ShakeHananPopup() {
         </div>
 
         {/* Body */}
-        <p className="text-base font-extrabold leading-snug text-[color:var(--color-ink)]">
+        <p className="text-sm font-extrabold leading-snug text-[color:var(--color-ink)]">
           שייק חינם בטעמים קייצים
         </p>
-        <p className="mt-1.5 text-sm text-[color:var(--color-ink-2)]">
+        <p className="mt-1.5 text-sm font-extrabold text-[color:var(--color-ink-2)]">
           למלך הבריכה של השבוע.
           <br />
           אז יאללה ללכת להשתזף
@@ -81,7 +81,7 @@ export default function ShakeHananPopup() {
           className="mt-5 w-full rounded-2xl py-3 text-sm font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
           style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
         >
-          אחלה, יאללה לבריכה 🏊
+          יאללה לבריכה
         </button>
       </div>
     </div>

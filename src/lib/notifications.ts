@@ -100,17 +100,35 @@ async function sendTelegramPhoto(
   caption: string,
   replyMarkup?: object
 ): Promise<void> {
-  const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl, caption };
-  if (replyMarkup) body.reply_markup = replyMarkup;
-  const res = await fetch(
-    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`,
+  // Skip photo if URL is localhost — Telegram can't fetch it; fall back to text message
+  const isLocalUrl = photoUrl.includes("localhost") || photoUrl.includes("127.0.0.1");
+
+  if (!isLocalUrl) {
+    const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl, caption };
+    if (replyMarkup) body.reply_markup = replyMarkup;
+    const res = await fetch(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
+    if (res.ok) return;
+    console.error(`[sendTelegramPhoto] Telegram error ${res.status} for chat ${chatId} — falling back to text`);
+  }
+
+  // Text-only fallback
+  const textBody: Record<string, unknown> = { chat_id: chatId, text: caption };
+  if (replyMarkup) textBody.reply_markup = replyMarkup;
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(textBody),
     }
   );
-  if (!res.ok) console.error(`[sendTelegramPhoto] Telegram error ${res.status} for chat ${chatId}`);
 }
 
 async function sendTelegram(chatId: string, text: string): Promise<void> {

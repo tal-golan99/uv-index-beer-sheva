@@ -17,7 +17,7 @@ export async function GET() {
   const today = todayJerusalem();
   const { data: queries, error } = await getAdmin()
     .from("pool_equipment_queries")
-    .select("id, user_id, message, created_at, pool_equipment_responses(id, user_id, item)")
+    .select("id, user_id, message, created_at, pool_equipment_responses(id, user_id, item, profiles(display_name))")
     .eq("query_date", today)
     .order("created_at", { ascending: false });
 

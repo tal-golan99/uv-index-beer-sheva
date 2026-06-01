@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Sun, Lock, ChartBar, UsersThree, Star, Lightning, Crown, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import Wordmark from "@/components/Wordmark";
+import MoreUVWaitlist from "@/components/MoreUVWaitlist";
 
 const TIERS = [
   {
@@ -181,13 +182,7 @@ export default function MorePage() {
         <section className="text-center space-y-4">
           <h2 className="display-title text-2xl text-[color:var(--color-ink)]">רוצה להיות ראשון לדעת?</h2>
           <p className="text-sm text-[color:var(--color-ink-2)]">הירשם לרשימת ההמתנה ונעדכן אותך כשהמנוי עולה.</p>
-          <button
-            disabled
-            className="rounded-2xl px-10 py-4 text-base font-extrabold text-white opacity-70 cursor-not-allowed"
-            style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
-          >
-            הצטרפות לרשימת ההמתנה — בקרוב
-          </button>
+          <MoreUVWaitlist />
         </section>
       </main>
     </div>

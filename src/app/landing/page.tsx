@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import Reveal from "@/components/Reveal";
 import Wordmark from "@/components/Wordmark";
+import CommentsSection from "@/components/CommentsSection";
 
 function StarRating() {
   return (
@@ -257,6 +258,11 @@ export default function LandingPage() {
         <p className="mt-5 text-center text-xs text-[color:var(--color-ink-2)]">
           * אף שחיין לא נפגע בזמן כתיבת הביקורות. גם לא נשאל.
         </p>
+      </section>
+
+      {/* ── Real user comments ── */}
+      <section className="mx-auto max-w-3xl px-4 pb-4">
+        <CommentsSection />
       </section>
 
       {/* ── Final CTA ── */}

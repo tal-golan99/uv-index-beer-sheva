@@ -30,6 +30,37 @@ async function answerCallbackQuery(callbackQueryId: string) {
   );
 }
 
+const BRING_ITEMS = ["🍺 בירות", "🧊 קרח", "🍉 אבטיח", "🎒 תרמיל", "🧴 שמן הגנה", "🔊 רמקול", "🥏 פריסבי"];
+
+/** Inline keyboard for /bring — preset items 3 per row. */
+function buildBringKeyboard() {
+  const rows: { text: string; callback_data: string }[][] = [];
+  for (let i = 0; i < BRING_ITEMS.length; i += 3) {
+    rows.push(
+      BRING_ITEMS.slice(i, i + 3).map((item) => ({
+        text: item,
+        callback_data: `bring:item:${item}`,
+      }))
+    );
+  }
+  return { inline_keyboard: rows };
+}
+
+/** Inline keyboard for /later — hour options 08:00–18:00, 3 per row. */
+function buildLaterKeyboard() {
+  const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+  const rows: { text: string; callback_data: string }[][] = [];
+  for (let i = 0; i < hours.length; i += 4) {
+    rows.push(
+      hours.slice(i, i + 4).map((h) => ({
+        text: `${h}:00`,
+        callback_data: `later:time:${h}`,
+      }))
+    );
+  }
+  return { inline_keyboard: rows };
+}
+
 /** Build the date picker keyboard for the next 7 days. */
 function buildDateKeyboard() {
   const now = new Date();
@@ -108,6 +139,84 @@ async function broadcastInvite(fromChatId: string, dateStr: string, hour: number
   return { calUrl, dateDisplay, hour };
 }
 
+/** Announce bring item — calls the equipment/bring API and broadcasts. */
+async function handleBring(fromChatId: string, item: string) {
+  const admin = getAdmin();
+
+  // Look up the user's profile by telegram_chat_id
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, display_name")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  if (!profile) {
+    await sendMessage(fromChatId, "לא מצאתי את הפרופיל שלך. נסה להתחבר מחדש דרך האפליקציה.");
+    return;
+  }
+
+  const name = (profile.display_name as string | null) ?? "מישהו";
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+
+  // Find or create today's shared general query
+  let { data: query } = await admin
+    .from("pool_equipment_queries")
+    .select("id")
+    .eq("query_date", today)
+    .is("message", null)
+    .maybeSingle();
+
+  if (!query) {
+    const { data: newQ } = await admin
+      .from("pool_equipment_queries")
+      .insert({ user_id: profile.id, query_date: today, message: null })
+      .select("id")
+      .single();
+    query = newQ;
+  }
+
+  if (query) {
+    await admin
+      .from("pool_equipment_responses")
+      .upsert({ query_id: query.id, user_id: profile.id, item }, { onConflict: "query_id,user_id" });
+  }
+
+  // Broadcast to all others
+  const broadcastText = `👋 ${name} מביא ${item} לבריכה! 🏊`;
+  const { data: others } = await admin
+    .from("profiles")
+    .select("telegram_chat_id")
+    .not("telegram_chat_id", "is", null)
+    .neq("telegram_chat_id", fromChatId);
+
+  const recipients = (others ?? []).map((p) => p.telegram_chat_id as string);
+  await Promise.allSettled(recipients.map((id) => sendMessage(id, broadcastText)));
+  await sendMessage(fromChatId, `✅ עדכנו את כולם שאתה מביא ${item}!`);
+}
+
+/** Broadcast "I'm arriving at X:00" to all other users. */
+async function handleLater(fromChatId: string, hour: number) {
+  const admin = getAdmin();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("display_name")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  const name = (profile?.display_name as string | null) ?? "מישהו";
+  const broadcastText = `🕐 ${name} מגיע לבריכה בשעה ${hour}:00!`;
+
+  const { data: others } = await admin
+    .from("profiles")
+    .select("telegram_chat_id")
+    .not("telegram_chat_id", "is", null)
+    .neq("telegram_chat_id", fromChatId);
+
+  const recipients = (others ?? []).map((p) => p.telegram_chat_id as string);
+  await Promise.allSettled(recipients.map((id) => sendMessage(id, broadcastText)));
+  await sendMessage(fromChatId, `✅ עדכנו את כולם שאתה מגיע בשעה ${hour}:00`);
+}
+
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-telegram-bot-api-secret-token");
   if (secret !== process.env.CRON_SECRET) {
@@ -137,6 +246,12 @@ export async function POST(req: NextRequest) {
         `✅ הזימון נשלח לכולם!\n${dateDisplay} בשעה ${hour}:00\n\nלהוסיף ליומן שלך:`,
         { inline_keyboard: [[{ text: "📅 Google Calendar", url: calUrl }]] }
       );
+    } else if (data.startsWith("bring:item:")) {
+      const item = data.slice("bring:item:".length);
+      await handleBring(chatId, item);
+    } else if (data.startsWith("later:time:")) {
+      const hour = parseInt(data.split(":")[2]);
+      await handleLater(chatId, hour);
     }
 
     return NextResponse.json({ ok: true });
@@ -190,6 +305,18 @@ export async function POST(req: NextRequest) {
 
   if (text === "/invite" || text.startsWith("/invite ")) {
     await sendMessage(chatId, "בחר תאריך לבריכה:", buildDateKeyboard());
+  } else if (text === "/bring" || text.startsWith("/bring ")) {
+    await sendMessage(chatId, "מה אתה מביא לבריכה? 🎒", buildBringKeyboard());
+  } else if (text === "/later" || text.startsWith("/later ")) {
+    await sendMessage(chatId, "באיזו שעה אתה מגיע? ⏰", buildLaterKeyboard());
+  } else if (text === "/help") {
+    await sendMessage(
+      chatId,
+      "🏊 UV Pool Bot — פקודות זמינות:\n\n" +
+      "/invite — זמן חברים לבריכה עם Google Calendar 📅\n" +
+      "/bring  — הודע מה אתה מביא לבריכה 🎒\n" +
+      "/later  — הודע מתי אתה מגיע ⏰"
+    );
   }
 
   return NextResponse.json({ ok: true });

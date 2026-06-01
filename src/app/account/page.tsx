@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle } from "@phosphor-icons/react";
 import Wordmark from "@/components/Wordmark";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile } from "@/types";
 
 interface PoolGroup {
@@ -43,6 +44,43 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
+function MoreUVWaitlistToggle({ supabase }: { supabase: SupabaseClient }) {
+  const [interest, setInterest] = useState<boolean | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      setUserId(user.id);
+      const { data } = await supabase.from("profiles").select("more_uv_interest").eq("id", user.id).maybeSingle();
+      setInterest(data?.more_uv_interest ?? false);
+    });
+  }, [supabase]);
+
+  async function toggle() {
+    if (!userId || interest === null) return;
+    const newVal = !interest;
+    setInterest(newVal);
+    await supabase.from("profiles").update({ more_uv_interest: newVal }).eq("id", userId);
+  }
+
+  if (interest === null) return null;
+
+  return (
+    <div className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">More UV ✨</h2>
+          <p className="mt-0.5 text-xs text-[color:var(--color-ink-3)]">
+            {interest ? "נרשמת לרשימת ההמתנה" : "עניין אותי — אעדכן אותך כשיצא"}
+          </p>
+        </div>
+        <Toggle checked={interest} onChange={toggle} />
+      </div>
+    </div>
+  );
+}
+
 export default function AccountPage() {
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const router = useRouter();
@@ -72,6 +110,11 @@ export default function AccountPage() {
   const [groupsSection, setGroupsSection] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Comment state
+  const [commentText, setCommentText] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [commentSent, setCommentSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -121,6 +164,21 @@ export default function AccountPage() {
   async function leaveGroup(groupId: string) {
     await fetch(`/api/groups/${groupId}`, { method: "DELETE" });
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
+  }
+
+  async function postComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    setPostingComment(true);
+    await fetch("/api/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: commentText }),
+    });
+    setCommentText("");
+    setPostingComment(false);
+    setCommentSent(true);
+    setTimeout(() => setCommentSent(false), 3000);
   }
 
   function copyInviteLink(code: string) {
@@ -320,9 +378,15 @@ export default function AccountPage() {
             </div>
 
             {telegramConnected ? (
-              <div className="flex items-center gap-3 rounded-xl bg-green-50 px-4 py-3 ring-1 ring-green-200">
-                <CheckCircle weight="fill" size={20} className="text-green-600" aria-hidden />
-                <p className="text-sm font-semibold text-green-800">מחובר לטלגרם</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 rounded-xl bg-green-50 px-4 py-3 ring-1 ring-green-200">
+                  <CheckCircle weight="fill" size={20} className="text-green-600" aria-hidden />
+                  <p className="text-sm font-semibold text-green-800">מחובר לטלגרם</p>
+                </div>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[color:var(--color-ink-2)]">התראות UV בטלגרם</span>
+                  <Toggle checked={phoneNotif} onChange={setPhoneNotif} />
+                </label>
               </div>
             ) : showTelegramSetup ? (
               <div className="space-y-3">
@@ -364,17 +428,6 @@ export default function AccountPage() {
               </button>
             )}
           </div>
-
-          {/* Notifications toggle */}
-          {telegramConnected && (
-            <div className="space-y-3 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
-              <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">התראות</h2>
-              <label className="flex items-center justify-between gap-3">
-                <span className="text-sm text-[color:var(--color-ink-2)]">התראות UV בטלגרם</span>
-                <Toggle checked={phoneNotif} onChange={setPhoneNotif} />
-              </label>
-            </div>
-          )}
 
           {error && (
             <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">{error}</p>
@@ -482,6 +535,35 @@ export default function AccountPage() {
                 </div>
               )}
             </div>
+          )}
+        </div>
+
+        {/* More UV waitlist */}
+        <MoreUVWaitlistToggle supabase={supabase} />
+
+        {/* Comment */}
+        <div className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">
+          <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">💬 כתוב תגובה</h2>
+          <form onSubmit={postComment} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="כתוב משהו..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              maxLength={500}
+              className={inputClass}
+            />
+            <button
+              type="submit"
+              disabled={postingComment || !commentText.trim()}
+              className="shrink-0 rounded-2xl px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
+            >
+              {postingComment ? "..." : "שלח"}
+            </button>
+          </form>
+          {commentSent && (
+            <p className="text-xs text-green-600 font-semibold">✓ תגובה נשלחה!</p>
           )}
         </div>
 

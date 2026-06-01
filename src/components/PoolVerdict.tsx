@@ -22,7 +22,7 @@ function verdictFor(uv: number): { answer: string; sub: string; emoji?: string }
   if (uv >= 4)
     return {
       answer: "אפשר, בלי להגזים.",
-      sub: `UV ${uv.toFixed(0)}. השמש פושרת, אבל בריכה אף פעם לא רעיון רע.`,
+      sub: `UV ${uv.toFixed(0)}. השמש גבוהה אבל לא מספיק — בריכה אף פעם לא רעיון רע.`,
     };
   return {
     answer: "עוד לא.",
