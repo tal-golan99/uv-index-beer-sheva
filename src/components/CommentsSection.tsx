@@ -27,12 +27,29 @@ export default function CommentsSection() {
       .then(setComments);
   }, []);
 
-  if (comments.length === 0) return null;
+  if (comments.length === 0) {
+    return (
+      <section className="space-y-3">
+        <h2 className="px-1 text-lg font-extrabold text-[color:var(--color-ink)] md:text-xl">
+          תגובות
+        </h2>
+        <div className="radius-nested bg-[color:var(--color-pool-50)] px-5 py-6 text-center ring-1 ring-[color:var(--color-pool-100)]">
+          <p className="text-base font-bold text-[color:var(--color-ink-2)]">היה הראשון להגיב</p>
+          <p className="mt-1 text-sm text-[color:var(--color-ink-3)]">
+            את הטקסט כותבים{" "}
+            <a href="/account" className="font-bold text-[color:var(--color-pool-600)] hover:underline">
+              בעמוד החשבון
+            </a>
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-4">
       <h2 className="px-1 text-lg font-extrabold text-[color:var(--color-ink)] md:text-xl">
-        💬 תגובות
+        תגובות
       </h2>
       <div className="space-y-2">
         {comments.map((c) => (

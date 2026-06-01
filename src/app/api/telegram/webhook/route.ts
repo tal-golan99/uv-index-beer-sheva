@@ -529,13 +529,13 @@ export async function POST(req: NextRequest) {
     await admin.from("profiles").update({ telegram_chat_id: chatId }).eq("id", row.user_id);
     await admin.from("pending_telegram_tokens").delete().eq("token", token);
 
-    const photoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?step=photo`;
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL!;
     await sendMessage(
       chatId,
       "מעולה! 🎉 נרשמת בהצלחה להתראות ה-UV.\n" +
         "מעכשיו נשלח לך התראה כשהשמש חזקה מדי — שעה לפני השיא ובשיא עצמו ☀️\n\n" +
-        "נשאר רק צעד אחד: בוא נבחר תמונת פרופיל ונסיים את ההרשמה 👇",
-      { inline_keyboard: [[{ text: "🏊 השלם הרשמה ובחר תמונה", url: photoUrl }]] }
+        "חזור לאפליקציה כדי לנהל את הפרופיל שלך 👇",
+      { inline_keyboard: [[{ text: "🏊 חזור לאתר", url: siteUrl }]] }
     );
   }
 

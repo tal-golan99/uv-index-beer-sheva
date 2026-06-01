@@ -224,8 +224,8 @@ export default function UVGauge({ value }: Props) {
 
       {/* Yuvi picker — which avatar rides the needle tip */}
       <div className="flex flex-col items-center gap-1.5" dir="rtl">
-        <span className="text-xs font-medium text-slate-500">תבחר את היובי שלך</span>
-        <div className="inline-flex rounded-full bg-slate-100 p-0.5">
+        <span className="text-xs font-medium text-[color:var(--color-ink-3)]">תבחר את היובי שלך</span>
+        <div className="inline-flex rounded-full bg-[color:var(--color-pool-50)] p-0.5 ring-1 ring-[color:var(--color-pool-100)]">
           {([
             { g: "male", label: "זכר" },
             { g: "female", label: "נקבה" },
@@ -237,8 +237,8 @@ export default function UVGauge({ value }: Props) {
               aria-pressed={gender === g}
               className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors ${
                 gender === g
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white text-[color:var(--color-ink)] shadow-sm"
+                  : "text-[color:var(--color-ink-3)] hover:text-[color:var(--color-ink-2)]"
               }`}
             >
               {label}

@@ -22,7 +22,7 @@ export default function ImageSlider({
   photos,
   aspect = "16 / 10",
   heightClass,
-  interval = 2000,
+  interval = 3500,
   rounded = "rounded-3xl",
   children,
 }: Props) {
@@ -106,12 +106,16 @@ export default function ImageSlider({
                 key={p.src}
                 onClick={() => setI(idx)}
                 aria-label={`תמונה ${idx + 1}`}
-                className="h-2 rounded-full transition-all"
-                style={{
-                  width: idx === i ? 18 : 8,
-                  background: idx === i ? "var(--color-pool-400)" : "rgba(255,255,255,0.6)",
-                }}
-              />
+                className="py-2 px-1"
+              >
+                <span
+                  className="block h-2 rounded-full transition-all"
+                  style={{
+                    width: idx === i ? 18 : 8,
+                    background: idx === i ? "var(--color-pool-400)" : "rgba(255,255,255,0.6)",
+                  }}
+                />
+              </button>
             ))}
           </div>
         </>

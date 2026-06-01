@@ -64,10 +64,18 @@ export default function WeeklyChart({ week, today }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="display-title px-1 text-lg text-[color:var(--color-ink)]">תחזית שבועית</h2>
-      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" dir="ltr" style={{ touchAction: "pan-x" }}>
-        {week.map((day) => (
-          <DayCard key={day.date} day={day} isToday={day.date === today} />
-        ))}
+      <div className="relative">
+        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" dir="ltr" style={{ touchAction: "pan-x" }}>
+          {week.map((day) => (
+            <DayCard key={day.date} day={day} isToday={day.date === today} />
+          ))}
+        </div>
+        {/* Fade hint: scroll is dir=ltr so overflow is on the right edge */}
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-10"
+          style={{ background: "linear-gradient(to left, var(--color-pool-50), transparent)" }}
+          aria-hidden
+        />
       </div>
     </section>
   );

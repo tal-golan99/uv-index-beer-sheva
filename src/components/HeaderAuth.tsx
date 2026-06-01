@@ -68,15 +68,15 @@ export default function HeaderAuth() {
             <Link
               href="/account"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
+              className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
               <span>👤</span> הפרופיל שלי
             </Link>
             <div className="h-px bg-[color:var(--color-pool-100)]" />
             <Link
-              href="/account?tab=groups"
+              href="/groups"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
+              className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
               <span>🏊</span> הקבוצות שלי
             </Link>
@@ -84,7 +84,7 @@ export default function HeaderAuth() {
             <Link
               href="/stats"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
+              className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
               <span>📊</span> סטטיסטיקה
             </Link>

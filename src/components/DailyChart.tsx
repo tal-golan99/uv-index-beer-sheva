@@ -73,10 +73,10 @@ export default function DailyChart({ hours }: Props) {
   const onMouseLeave = useCallback(() => setHovered(null), []);
 
   return (
-    <div className="radius-card shadow-pool-md bg-white p-5 ring-1 ring-[color:var(--color-pool-100)]">
+    <section>
       <div className="mb-5">
-        <h2 className="text-lg text-[color:var(--color-ink)] display-title">מדד UV היום</h2>
-        <p className="text-xs text-[color:var(--color-ink-2)] mt-0.5">העבירו עליו כדי לראות לפי שעה</p>
+        <h2 className="display-title px-1 text-lg text-[color:var(--color-ink)]">מדד UV היום</h2>
+        <p className="mt-0.5 px-1 text-xs text-[color:var(--color-ink-2)]">גע בגרף לראות לפי שעה</p>
       </div>
 
       <div style={{ touchAction: "pan-y" }}>
@@ -140,6 +140,6 @@ export default function DailyChart({ hours }: Props) {
       </ResponsiveContainer>
       )}
       </div>
-    </div>
+    </section>
   );
 }

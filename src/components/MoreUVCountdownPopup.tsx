@@ -5,6 +5,7 @@ import Link from "next/link";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const COUPON = "MOR10";
+const SESSION_KEY = "more-uv-offer-seen";
 
 function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -21,9 +22,13 @@ export default function MoreUVCountdownPopup() {
   const startRef = useRef<number>(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Show after 2s delay, countdown resets every page load
+  // Show after 2s delay, once per session
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), 2000);
+    if (sessionStorage.getItem(SESSION_KEY)) return;
+    const timer = setTimeout(() => {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setVisible(true);
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 

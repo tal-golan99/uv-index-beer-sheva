@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 const PRESET_ITEMS = ["🍺 בירות", "🧊 קרח", "🍉 אבטיח", "🧴 קרם הגנה", "🔊 רמקול", "🥏 פריסבי"];
@@ -32,6 +33,7 @@ export default function EquipmentSection() {
   const [customText, setCustomText] = useState("");
   const [announced, setAnnounced] = useState<Set<string>>(new Set());
   const [asked, setAsked] = useState<Set<string>>(new Set());
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -48,6 +50,7 @@ export default function EquipmentSection() {
   async function announce(item: string) {
     if (!authed || posting) return;
     setPosting(item);
+    setActionError("");
     const res = await fetch("/api/equipment/bring", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,12 +61,15 @@ export default function EquipmentSection() {
       setAnnounced((prev) => new Set([...prev, item]));
       setTimeout(() => setAnnounced((prev) => { const s = new Set(prev); s.delete(item); return s; }), 4000);
       await loadQueries();
+    } else {
+      setActionError("לא הצלחנו לשלוח. נסה שוב.");
     }
   }
 
   async function askAbout(item: string) {
     if (!authed || posting) return;
     setPosting(item);
+    setActionError("");
     const res = await fetch("/api/equipment/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -73,6 +79,8 @@ export default function EquipmentSection() {
     if (res.ok) {
       setAsked((prev) => new Set([...prev, item]));
       setTimeout(() => setAsked((prev) => { const s = new Set(prev); s.delete(item); return s; }), 4000);
+    } else {
+      setActionError("לא הצלחנו לשלוח. נסה שוב.");
     }
   }
 
@@ -105,7 +113,10 @@ export default function EquipmentSection() {
         aria-expanded={open}
       >
         <span className="text-sm font-extrabold text-[color:var(--color-ink)]">🎒 מי מביא מה?</span>
-        <span className="text-[color:var(--color-ink-3)] text-sm">{open ? "▲" : "▼"}</span>
+        {open
+          ? <CaretUp size={16} weight="bold" className="text-[color:var(--color-ink-3)]" aria-hidden />
+          : <CaretDown size={16} weight="bold" className="text-[color:var(--color-ink-3)]" aria-hidden />
+        }
       </button>
 
       {open && (
@@ -194,6 +205,12 @@ export default function EquipmentSection() {
             <p className="text-xs text-[color:var(--color-ink-2)]">
               <a href="/login" className="font-bold text-[color:var(--color-pool-600)] hover:underline">התחבר</a>
               {" "}כדי להכריז מה אתה מביא לבריכה
+            </p>
+          )}
+
+          {actionError && (
+            <p role="alert" className="radius-nested bg-red-50 px-4 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+              {actionError}
             </p>
           )}
 

@@ -9,13 +9,6 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile } from "@/types";
 
-interface PoolGroup {
-  id: string;
-  name: string;
-  invite_code: string;
-  created_by: string | null;
-}
-
 function TelegramIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" xmlns="http://www.w3.org/2000/svg">
@@ -70,7 +63,7 @@ function MoreUVWaitlistToggle({ supabase }: { supabase: SupabaseClient }) {
     <div className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">More UV ✨</h2>
+          <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">More UV ✨</h2>
           <p className="mt-0.5 text-xs text-[color:var(--color-ink-3)]">
             {interest ? "נרשמת לרשימת ההמתנה" : "עניין אותי — אעדכן אותך כשיצא"}
           </p>
@@ -104,12 +97,6 @@ export default function AccountPage() {
   const [showTelegramSetup, setShowTelegramSetup] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Groups state
-  const [groups, setGroups] = useState<PoolGroup[]>([]);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [groupsSection, setGroupsSection] = useState(false);
-  const [creatingGroup, setCreatingGroup] = useState(false);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Comment state
   const [commentText, setCommentText] = useState("");
@@ -134,40 +121,7 @@ export default function AccountPage() {
       })
       .catch(() => setLoading(false));
 
-    fetch("/api/groups").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setGroups(data as PoolGroup[]);
-    }).catch(() => {});
-
-    // If redirected from join page or groups dropdown, open groups section automatically.
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("group") || params.get("tab") === "groups") {
-        setGroupsSection(true);
-      }
-    }
   }, [supabase, router]);
-
-  async function createGroup(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newGroupName.trim()) return;
-    setCreatingGroup(true);
-    const res = await fetch("/api/groups", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newGroupName.trim() }),
-    });
-    if (res.ok) {
-      const g: PoolGroup = await res.json();
-      setGroups((prev) => [g, ...prev]);
-      setNewGroupName("");
-    }
-    setCreatingGroup(false);
-  }
-
-  async function leaveGroup(groupId: string) {
-    await fetch(`/api/groups/${groupId}`, { method: "DELETE" });
-    setGroups((prev) => prev.filter((g) => g.id !== groupId));
-  }
 
   async function postComment(e: React.FormEvent) {
     e.preventDefault();
@@ -182,14 +136,6 @@ export default function AccountPage() {
     setPostingComment(false);
     setCommentSent(true);
     setTimeout(() => setCommentSent(false), 3000);
-  }
-
-  function copyInviteLink(code: string) {
-    const url = `${window.location.origin}/groups/${code}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedCode(code);
-      setTimeout(() => setCopiedCode(null), 2000);
-    });
   }
 
   // Start Telegram setup when user clicks Connect
@@ -377,7 +323,7 @@ export default function AccountPage() {
           {/* Telegram */}
           <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">טלגרם</h2>
+              <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">טלגרם</h2>
               {telegramConnected && (
                 <button
                   type="button"
@@ -460,99 +406,18 @@ export default function AccountPage() {
           </button>
         </form>
 
-        {/* Groups section */}
-        <div className="rounded-3xl bg-white ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setGroupsSection((o) => !o)}
-            className="flex w-full items-center justify-between px-6 py-4"
-          >
-            <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">🏊 הקבוצות שלי</h2>
-            <span className="text-[color:var(--color-ink-3)] text-sm">{groupsSection ? "▲" : "▼"}</span>
-          </button>
-
-          {groupsSection && (
-            <div className="border-t border-[color:var(--color-pool-100)] px-6 pb-6 pt-4 space-y-4">
-              {/* Create group */}
-              <form onSubmit={createGroup} className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="שם הקבוצה"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  maxLength={60}
-                  className={inputClass}
-                />
-                <button
-                  type="submit"
-                  disabled={creatingGroup || !newGroupName.trim()}
-                  className="shrink-0 rounded-2xl px-4 py-3 text-sm font-extrabold text-white disabled:opacity-50"
-                  style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
-                >
-                  {creatingGroup ? "..." : "צור"}
-                </button>
-              </form>
-
-              {/* Groups list */}
-              {groups.length === 0 ? (
-                <p className="text-center text-sm text-[color:var(--color-ink-3)]">עוד אין קבוצות</p>
-              ) : (
-                <div className="space-y-3">
-                  {groups.map((g) => {
-                    const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/groups/${g.invite_code}`;
-                    const waUrl = `https://wa.me/?text=${encodeURIComponent(`הצטרף לקבוצת הבריכה "${g.name}" 🏊\n${inviteUrl}`)}`;
-                    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(`הצטרף לקבוצת הבריכה "${g.name}" 🏊`)}`;
-
-                    return (
-                      <div key={g.id} className="rounded-2xl bg-[color:var(--color-pool-50)] p-3 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-extrabold text-[color:var(--color-ink)]">{g.name}</p>
-                          <button
-                            type="button"
-                            onClick={() => leaveGroup(g.id)}
-                            className="text-xs font-semibold text-red-500 hover:underline"
-                          >
-                            עזוב
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => copyInviteLink(g.invite_code)}
-                            className="flex-1 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)] hover:ring-[color:var(--color-pool-400)] transition-all"
-                          >
-                            {copiedCode === g.invite_code ? "✓ הועתק!" : "📋 העתק לינק"}
-                          </button>
-                          <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-xl bg-green-500 px-3 py-2 text-xs font-bold text-white hover:bg-green-600 transition-colors"
-                          >
-                            WhatsApp
-                          </a>
-                          <a
-                            href={tgUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-xl px-3 py-2 text-xs font-bold text-white transition-colors"
-                            style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
-                          >
-                            Telegram
-                          </a>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        {/* Groups section — now a dedicated page */}
+        <Link
+          href="/groups"
+          className="flex items-center justify-between rounded-3xl bg-white px-6 py-4 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm hover:bg-[color:var(--color-pool-50)] transition-colors"
+        >
+          <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">🏊 הקבוצות שלי</h2>
+          <span className="text-[color:var(--color-ink-3)] text-sm">←</span>
+        </Link>
 
         {/* Comment */}
         <div className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">
-          <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">💬 כתוב תגובה</h2>
+          <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">💬 כתוב תגובה</h2>
           <form onSubmit={postComment} className="flex gap-2">
             <input
               type="text"

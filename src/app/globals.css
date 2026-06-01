@@ -95,8 +95,8 @@ body.night-mode {
 }
 body.night-mode .surface-band {
   background:
-    radial-gradient(125% 100% at 50% 0%, rgba(14, 147, 212, 0.12), transparent 68%),
-    rgba(14, 30, 44, 0.85);
+    radial-gradient(125% 100% at 50% 0%, rgba(14, 147, 212, 0.22), transparent 68%),
+    rgba(10, 28, 48, 0.90);
 }
 body.night-mode .radius-card,
 body.night-mode .radius-nested {
@@ -164,7 +164,10 @@ body.night-mode .radius-nested {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.anim-pop  { animation: pop-in 0.5s var(--ease-spring) both; }
+/* Default: smooth expo — no overshoot on cards, panels, chips */
+.anim-pop  { animation: pop-in 0.5s var(--ease-out-expo) both; }
+/* Spring variant: deliberate overshoot for the gauge needle and swimmer pins only */
+.anim-pop-spring { animation: pop-in 0.5s var(--ease-spring) both; }
 .anim-rise { animation: rise-in 0.5s var(--ease-out-expo) both; }
 
 /* Pressable: instant tactile feedback on any interactive element */
@@ -295,7 +298,7 @@ body.night-mode .radius-nested {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-bob, .anim-sun, .anim-pop, .anim-rise, .anim-blob,
+  .anim-bob, .anim-sun, .anim-pop, .anim-pop-spring, .anim-rise, .anim-blob,
   .title-underline::after, .ripple,
   .water-caustics::before, .water-caustics::after,
   .uv-aura {
