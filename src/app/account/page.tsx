@@ -138,9 +138,12 @@ export default function AccountPage() {
       if (Array.isArray(data)) setGroups(data as PoolGroup[]);
     }).catch(() => {});
 
-    // If redirected from join page, open groups section automatically.
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("group")) {
-      setGroupsSection(true);
+    // If redirected from join page or groups dropdown, open groups section automatically.
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("group") || params.get("tab") === "groups") {
+        setGroupsSection(true);
+      }
     }
   }, [supabase, router]);
 
@@ -276,6 +279,15 @@ export default function AccountPage() {
       setAvatarFile(null);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+
+      // If avatar changed, re-upsert pool_presence so the new photo shows in the pool immediately.
+      if (avatarFile) {
+        fetch("/api/checkin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "in" }),
+        }).catch(() => {});
+      }
     } catch {
       setError("שגיאה בשמירה. נסה שוב מאוחר יותר.");
     } finally {

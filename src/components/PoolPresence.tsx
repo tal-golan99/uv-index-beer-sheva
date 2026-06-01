@@ -2,25 +2,21 @@
 
 import Image from "next/image";
 import { Waves } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { POOL_IMAGE } from "@/lib/photos";
 import type { PoolPresenceEntry } from "@/types";
 import type { User } from "@supabase/supabase-js";
 
-// A swimmer is auto-removed 4 hours after check-in. The DB cleanup (pg_cron +
-// the check-in API) enforces this server-side; this is the client-side mirror so
-// the UI never shows a stale swimmer for more than the 60s tick interval below.
 const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+const FRICTION = 0.93;
+const WALL_PAD = 7; // % from each edge so avatar stays inside rounded frame
 
-// Deterministic position from user_id so each swimmer always lands in the same spot.
-// Ranges are kept inset (top 16-68%, left 16-84%) so the avatar + name label below
-// it always stay inside the rounded, overflow-hidden frame (no clipped pins).
-function positionFor(userId: string): { top: number; left: number } {
+function positionFor(userId: string): { x: number; y: number } {
   let h = 0;
   for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) | 0;
   const h2 = Math.abs(h);
-  return { top: 16 + (h2 % 52), left: 16 + ((h2 * 7) % 68) };
+  return { x: 16 + ((h2 * 7) % 68), y: 16 + (h2 % 52) };
 }
 
 const AVATAR_COLORS = [
@@ -32,7 +28,6 @@ function colorFor(userId: string) {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
-/** Water-splash ripple from the tap point. Skipped under reduced motion. */
 function addRipple(e: React.PointerEvent<HTMLButtonElement>) {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const btn = e.currentTarget;
@@ -45,26 +40,36 @@ function addRipple(e: React.PointerEvent<HTMLButtonElement>) {
   span.addEventListener("animationend", () => span.remove());
 }
 
+interface PhysVec { x: number; y: number; vx: number; vy: number }
+
 function SwimmerPin({
   entry,
   delay,
   isMe,
+  x,
+  y,
+  onPointerDown,
+  overrideAvatarUrl,
 }: {
   entry: PoolPresenceEntry;
   delay: number;
   isMe: boolean;
+  x: number;
+  y: number;
+  onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
+  overrideAvatarUrl?: string | null;
 }) {
-  const { top, left } = isMe ? { top: 46, left: 46 } : positionFor(entry.user_id);
   const ringColor = colorFor(entry.user_id);
+  const avatarUrl = isMe && overrideAvatarUrl != null ? overrideAvatarUrl : entry.avatar_url;
+
   return (
-    // Outer holds the centering transform; inner runs the spring entrance so the
-    // two transforms never fight (anim-pop would otherwise clobber the centering).
     <div
-      className="absolute flex flex-col items-center"
-      style={{ top: `${top}%`, left: `${left}%`, transform: "translate(-50%, -50%)" }}
+      className="absolute flex flex-col items-center cursor-grab active:cursor-grabbing select-none"
+      style={{ top: `${y}%`, left: `${x}%`, transform: "translate(-50%, -50%)", touchAction: "none" }}
+      onPointerDown={onPointerDown}
     >
       <div
-        className="anim-pop flex flex-col items-center gap-1"
+        className="anim-pop-spring flex flex-col items-center gap-1"
         style={{ animationDelay: `${0.1 + delay}s` }}
       >
         <div
@@ -72,20 +77,15 @@ function SwimmerPin({
           style={{
             width: "clamp(42px, 8vw, 60px)",
             height: "clamp(42px, 8vw, 60px)",
-            background: entry.avatar_url ? undefined : ringColor,
+            background: avatarUrl ? undefined : ringColor,
             animationDelay: `${delay}s`,
-            // white ring + a soft halo in the swimmer's own colour (not neon)
             boxShadow: `0 0 0 3px rgba(255,255,255,0.95), 0 6px 16px -4px ${ringColor}`,
           }}
           title={entry.display_name}
         >
-          {entry.avatar_url ? (
+          {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={entry.avatar_url}
-              alt={entry.display_name}
-              className="h-full w-full object-cover"
-            />
+            <img src={avatarUrl} alt={entry.display_name} className="h-full w-full object-cover" />
           ) : (
             <div className="grid h-full w-full place-items-center text-white text-lg font-black">
               {entry.display_name[0]}
@@ -104,78 +104,164 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const [swimmers, setSwimmers] = useState<PoolPresenceEntry[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [inPool, setInPool] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
-  // Bumped every 60s so stale swimmers (>4h) drop out of the UI even without a
-  // DB change to trigger a realtime refetch.
   const [tick, setTick] = useState(0);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Load initial data and subscribe to realtime
+  // Physics state lives in a ref (mutated per frame) + a snapshot state (triggers re-render)
+  const physicsRef = useRef<Map<string, PhysVec>>(new Map());
+  const [positions, setPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const rafRef = useRef<number>(0);
+  const poolFrameRef = useRef<HTMLDivElement>(null);
+
+  // Load data + auth + profile
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        fetch("/api/profile")
+          .then((r) => r.json())
+          .then((p) => { if (p?.avatar_url) setProfileAvatarUrl(p.avatar_url); })
+          .catch(() => {});
+      }
+    });
 
-    // Initial fetch
-    supabase
-      .from("pool_presence")
-      .select("*")
-      .order("checked_in_at")
-      .then(({ data, error }) => {
-        if (error) console.error("[pool_presence] initial fetch error", error.code, error.message);
-        if (data) setSwimmers(data as PoolPresenceEntry[]);
-      });
+    supabase.from("pool_presence").select("*").order("checked_in_at").then(({ data, error }) => {
+      if (error) console.error("[pool_presence] initial fetch error", error.code, error.message);
+      if (data) setSwimmers(data as PoolPresenceEntry[]);
+    });
 
-    // Realtime subscription
     const channel = supabase
       .channel("pool_presence_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pool_presence" },
-        () => {
-          // Re-fetch on any change
-          supabase
-            .from("pool_presence")
-            .select("*")
-            .order("checked_in_at")
-            .then(({ data, error }) => {
-              if (error) console.error("[pool_presence] realtime refetch error", error.code, error.message);
-              if (data) setSwimmers(data as PoolPresenceEntry[]);
-            });
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "pool_presence" }, () => {
+        supabase.from("pool_presence").select("*").order("checked_in_at").then(({ data, error }) => {
+          if (error) console.error("[pool_presence] realtime refetch error", error.code, error.message);
+          if (data) setSwimmers(data as PoolPresenceEntry[]);
+        });
+      })
       .subscribe();
 
     channelRef.current = channel;
-    return () => {
-      channel.unsubscribe();
-    };
+    return () => { channel.unsubscribe(); };
   }, [supabase]);
 
-  // Re-evaluate the 4h staleness filter once a minute.
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  // Only show swimmers checked in within the last 4 hours. The DB cleanup removes
-  // them server-side; this guards the window between cleanups.
   const visibleSwimmers = useMemo(
-    () =>
-      swimmers.filter(
-        (s) => Date.now() - new Date(s.checked_in_at).getTime() < FOUR_HOURS_MS
-      ),
-    // `tick` (every 60s) re-evaluates the time-based filter as swimmers age out.
+    () => swimmers.filter((s) => Date.now() - new Date(s.checked_in_at).getTime() < FOUR_HOURS_MS),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [swimmers, tick]
   );
 
-  // Sync inPool state with the visible swimmers list
   useEffect(() => {
-    if (user) {
-      setInPool(visibleSwimmers.some((s) => s.user_id === user.id));
-    }
+    if (user) setInPool(visibleSwimmers.some((s) => s.user_id === user.id));
   }, [visibleSwimmers, user]);
+
+  // Sync physics map when visible swimmers change
+  useEffect(() => {
+    const physics = physicsRef.current;
+    const ids = new Set(visibleSwimmers.map((s) => s.user_id));
+
+    // Remove gone swimmers
+    for (const id of [...physics.keys()]) {
+      if (!ids.has(id)) physics.delete(id);
+    }
+
+    // Init positions for new swimmers only
+    for (const s of visibleSwimmers) {
+      if (!physics.has(s.user_id)) {
+        const isMe = user?.id === s.user_id;
+        const init = isMe ? { x: 46, y: 46 } : positionFor(s.user_id);
+        physics.set(s.user_id, { x: init.x, y: init.y, vx: 0, vy: 0 });
+      }
+    }
+
+    // Push snapshot
+    const snap = new Map<string, { x: number; y: number }>();
+    for (const [id, p] of physics) snap.set(id, { x: p.x, y: p.y });
+    setPositions(snap);
+  }, [visibleSwimmers, user]);
+
+  // Physics animation loop — only runs while there is velocity
+  const runPhysics = useCallback(() => {
+    const physics = physicsRef.current;
+    let anyMoving = false;
+
+    for (const p of physics.values()) {
+      p.vx *= FRICTION;
+      p.vy *= FRICTION;
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < WALL_PAD)        { p.x = WALL_PAD;        p.vx =  Math.abs(p.vx) * 0.65; }
+      if (p.x > 100 - WALL_PAD)  { p.x = 100 - WALL_PAD;  p.vx = -Math.abs(p.vx) * 0.65; }
+      if (p.y < WALL_PAD)        { p.y = WALL_PAD;         p.vy =  Math.abs(p.vy) * 0.65; }
+      if (p.y > 100 - WALL_PAD)  { p.y = 100 - WALL_PAD;  p.vy = -Math.abs(p.vy) * 0.65; }
+
+      if (Math.abs(p.vx) > 0.02 || Math.abs(p.vy) > 0.02) anyMoving = true;
+    }
+
+    const snap = new Map<string, { x: number; y: number }>();
+    for (const [id, p] of physics) snap.set(id, { x: p.x, y: p.y });
+    setPositions(snap);
+
+    if (anyMoving) rafRef.current = requestAnimationFrame(runPhysics);
+  }, []);
+
+  const startPhysicsLoop = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(runPhysics);
+  }, [runPhysics]);
+
+  // Drag handler — converts pointer delta in px to % of pool frame
+  const handlePointerDown = useCallback((userId: string, e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+
+    let lastX = e.clientX;
+    let lastY = e.clientY;
+
+    function onMove(ev: PointerEvent) {
+      const frame = poolFrameRef.current;
+      if (!frame) return;
+      const rect = frame.getBoundingClientRect();
+      const scaleX = 100 / rect.width;
+      const scaleY = 100 / rect.height;
+
+      const dx = (ev.clientX - lastX) * scaleX;
+      const dy = (ev.clientY - lastY) * scaleY;
+      lastX = ev.clientX;
+      lastY = ev.clientY;
+
+      const p = physicsRef.current.get(userId);
+      if (!p) return;
+      p.x = Math.max(WALL_PAD, Math.min(100 - WALL_PAD, p.x + dx));
+      p.y = Math.max(WALL_PAD, Math.min(100 - WALL_PAD, p.y + dy));
+      p.vx = dx * 0.6;
+      p.vy = dy * 0.6;
+
+      setPositions((prev) => {
+        const next = new Map(prev);
+        next.set(userId, { x: p.x, y: p.y });
+        return next;
+      });
+    }
+
+    function onUp() {
+      startPhysicsLoop();
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    }
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }, [startPhysicsLoop]);
 
   async function toggleCheckin() {
     if (!user) return;
@@ -193,10 +279,7 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
         setError("לא הצלחנו לעדכן. נסה שוב.");
         return;
       }
-      const { data, error: selError } = await supabase
-        .from("pool_presence")
-        .select("*")
-        .order("checked_in_at");
+      const { data, error: selError } = await supabase.from("pool_presence").select("*").order("checked_in_at");
       if (selError) {
         console.error("[checkin] refetch error", selError.code, selError.message);
         setError("העדכון נשמר אך לא הצלחנו לרענן את הבריכה.");
@@ -223,8 +306,9 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
         </span>
       </div>
 
-      {/* Pool */}
+      {/* Pool frame */}
       <div
+        ref={poolFrameRef}
         className="radius-card shadow-pool-lg relative w-full overflow-hidden ring-1 ring-[color:var(--color-pool-200)]"
         style={{ aspectRatio: "16 / 10" }}
       >
@@ -237,17 +321,23 @@ export default function PoolPresence({ currentUV = 0 }: { currentUV?: number }) 
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0ea5e9]/25 via-[#0ea5e9]/10 to-[#0369a1]/35" />
-        {/* Animated water caustics — light dancing on the surface (decor, GPU-only) */}
         <div className="water-caustics" aria-hidden />
 
-        {visibleSwimmers.map((s, i) => (
-          <SwimmerPin
-            key={s.user_id}
-            entry={s}
-            delay={i * 0.4}
-            isMe={user?.id === s.user_id}
-          />
-        ))}
+        {visibleSwimmers.map((s, i) => {
+          const pos = positions.get(s.user_id) ?? (user?.id === s.user_id ? { x: 46, y: 46 } : positionFor(s.user_id));
+          return (
+            <SwimmerPin
+              key={s.user_id}
+              entry={s}
+              delay={i * 0.4}
+              isMe={user?.id === s.user_id}
+              x={pos.x}
+              y={pos.y}
+              overrideAvatarUrl={user?.id === s.user_id ? profileAvatarUrl : undefined}
+              onPointerDown={(e) => handlePointerDown(s.user_id, e)}
+            />
+          );
+        })}
 
         {visibleSwimmers.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">

@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "שגיאה. נסה שוב." }, { status: 500 });
   }
 
-  // Record today's visit in history (Asia/Jerusalem date). Ignore if already logged today.
+  // Record today's visit in history (Asia/Jerusalem date). Update checked_in_at on conflict.
   // A failure here must not break check-in, so we only log it.
   const visitDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
   const nowIso = new Date().toISOString();
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     .from("pool_visits")
     .upsert(
       { user_id: user.id, visit_date: visitDate, checked_in_at: nowIso },
-      { onConflict: "user_id,visit_date", ignoreDuplicates: true }
+      { onConflict: "user_id,visit_date", ignoreDuplicates: false }
     );
   if (visitError) console.error("[checkin] visit log error", { userId: user.id, code: visitError.code, message: visitError.message });
 

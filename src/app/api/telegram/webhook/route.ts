@@ -244,6 +244,180 @@ async function handleAsk(fromChatId: string, item: string) {
   await sendMessage(fromChatId, `✅ שלחנו לכולם שאתה מחפש מי שמביא ${item}`);
 }
 
+/** Inline keyboard for /rate — pool load options. */
+function buildRateKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: "🏖️ ריק", callback_data: "rate:level:🏖️ ריק" },
+        { text: "🏊 רגיל", callback_data: "rate:level:🏊 רגיל" },
+      ],
+      [
+        { text: "🌊 עמוס", callback_data: "rate:level:🌊 עמוס" },
+        { text: "🚫 מלא", callback_data: "rate:level:🚫 מלא" },
+      ],
+    ],
+  };
+}
+
+/** Check user into pool via Telegram (bypasses cookie auth, uses admin client). */
+async function handleTelegramCheckin(fromChatId: string) {
+  const admin = getAdmin();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, display_name, avatar_url, telegram_chat_id")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  if (!profile) {
+    await sendMessage(fromChatId, "לא מצאתי את הפרופיל שלך. התחבר לאפליקציה תחילה.");
+    return;
+  }
+
+  const name = (profile.display_name as string | null) ?? "שחיין";
+  const avatarUrl = (profile.avatar_url as string | null) ?? null;
+  const now = new Date().toISOString();
+  const visitDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+
+  // Upsert pool_presence
+  await admin.from("pool_presence").upsert(
+    { user_id: profile.id, display_name: name, avatar_url: avatarUrl, checked_in_at: now },
+    { onConflict: "user_id" }
+  );
+
+  // Upsert pool_visits for today
+  await admin.from("pool_visits").upsert(
+    { user_id: profile.id, visit_date: visitDate, checked_in_at: now },
+    { onConflict: "user_id,visit_date", ignoreDuplicates: false }
+  );
+
+  // Notify group members / all users
+  const { data: memberRows } = await admin.from("pool_group_members").select("group_id").eq("user_id", profile.id);
+  const groupIds = (memberRows ?? []).map((r) => r.group_id as string);
+  let chatIds: string[] = [];
+
+  if (groupIds.length > 0) {
+    const { data: groupMembers } = await admin.from("pool_group_members").select("user_id").in("group_id", groupIds).neq("user_id", profile.id);
+    const recipientIds = [...new Set((groupMembers ?? []).map((r) => r.user_id as string))];
+    const { data: groupProfiles } = await admin.from("profiles").select("telegram_chat_id").in("id", recipientIds).not("telegram_chat_id", "is", null);
+    chatIds = (groupProfiles ?? []).map((p) => p.telegram_chat_id as string);
+  } else {
+    const { data: allProfiles } = await admin.from("profiles").select("telegram_chat_id").neq("id", profile.id).not("telegram_chat_id", "is", null);
+    chatIds = (allProfiles ?? []).map((p) => p.telegram_chat_id as string);
+  }
+
+  if (chatIds.length > 0) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    await Promise.allSettled(chatIds.map((id) =>
+      sendMessage(id, `🏊 ${name} נכנס לבריכה! בוא תצטרף 🌊`, {
+        inline_keyboard: [[{ text: "פתח אפליקציה", url: appUrl }]],
+      })
+    ));
+  }
+
+  await sendMessage(fromChatId, "✅ נרשמת בבריכה! חברים שלך קיבלו התראה. 🏊");
+}
+
+/** Check user out of pool via Telegram. */
+async function handleTelegramCheckout(fromChatId: string) {
+  const admin = getAdmin();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, display_name")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  if (!profile) {
+    await sendMessage(fromChatId, "לא מצאתי את הפרופיל שלך.");
+    return;
+  }
+
+  const { data: presence } = await admin
+    .from("pool_presence")
+    .select("checked_in_at")
+    .eq("user_id", profile.id)
+    .maybeSingle();
+
+  await admin.from("pool_presence").delete().eq("user_id", profile.id);
+
+  if (presence?.checked_in_at) {
+    const durationMinutes = Math.round((Date.now() - new Date(presence.checked_in_at).getTime()) / 60_000);
+    const visitDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+    await admin.from("pool_visits").update({ duration_minutes: durationMinutes }).eq("user_id", profile.id).eq("visit_date", visitDate);
+    await sendMessage(fromChatId, `👋 יצאת מהבריכה! ביקרת ${durationMinutes} דקות היום. עד הפעם הבאה 🌞`);
+  } else {
+    await sendMessage(fromChatId, "👋 יצאת! (לא נמצאת כרשום בבריכה)");
+  }
+}
+
+/** Handle photo sent to the bot — upload to Supabase Storage. */
+async function handlePhoto(fromChatId: string, photos: { file_id: string; file_size?: number }[]) {
+  const admin = getAdmin();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, display_name")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  if (!profile) {
+    await sendMessage(fromChatId, "לא מצאתי את הפרופיל שלך. התחבר לאפליקציה תחילה.");
+    return;
+  }
+
+  // Pick the largest photo variant
+  const best = photos.reduce((a, b) => ((a.file_size ?? 0) >= (b.file_size ?? 0) ? a : b));
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+
+  try {
+    // Get file path from Telegram
+    const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${best.file_id}`);
+    const fileData = await fileRes.json();
+    const filePath: string = fileData.result?.file_path;
+    if (!filePath) throw new Error("No file path");
+
+    // Download file
+    const imgRes = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`);
+    const imgBuffer = await imgRes.arrayBuffer();
+
+    // Upload to Supabase Storage
+    const timestamp = Date.now();
+    const storagePath = `telegram/${profile.id}/${timestamp}.jpg`;
+    const { error: uploadError } = await admin.storage
+      .from("pool-photos")
+      .upload(storagePath, imgBuffer, { contentType: "image/jpeg", upsert: false });
+
+    if (uploadError) throw uploadError;
+
+    await sendMessage(fromChatId, "📸 התמונה נשמרה לגלריה! תודה שחלקת עם הבריכה 🌊");
+  } catch (err) {
+    console.error("[telegram] photo upload error", err);
+    await sendMessage(fromChatId, "⚠️ לא הצלחנו לשמור את התמונה. נסה שוב.");
+  }
+}
+
+/** Broadcast a pool load rating to all users. */
+async function handleRating(fromChatId: string, level: string) {
+  const admin = getAdmin();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("display_name")
+    .eq("telegram_chat_id", fromChatId)
+    .maybeSingle();
+
+  const name = (profile?.display_name as string | null) ?? "מישהו";
+  const broadcastText = `⭐ ${name} מדרג עומס הבריכה: ${level}`;
+
+  const { data: others } = await admin
+    .from("profiles")
+    .select("telegram_chat_id")
+    .not("telegram_chat_id", "is", null)
+    .neq("telegram_chat_id", fromChatId);
+
+  const recipients = (others ?? []).map((p) => p.telegram_chat_id as string);
+  await Promise.allSettled(recipients.map((id) => sendMessage(id, broadcastText)));
+  await sendMessage(fromChatId, `✅ שלחנו לכולם את הדירוג: ${level}`);
+}
+
 /** Broadcast "I'm arriving at X:00" to all other users. */
 async function handleLater(fromChatId: string, hour: number) {
   const admin = getAdmin();
@@ -305,6 +479,9 @@ export async function POST(req: NextRequest) {
     } else if (data.startsWith("later:time:")) {
       const hour = parseInt(data.split(":")[2]);
       await handleLater(chatId, hour);
+    } else if (data.startsWith("rate:level:")) {
+      const level = data.slice("rate:level:".length);
+      await handleRating(chatId, level);
     }
 
     return NextResponse.json({ ok: true });
@@ -316,6 +493,12 @@ export async function POST(req: NextRequest) {
 
   const text: string = message.text ?? "";
   const chatId = String(message.chat.id);
+
+  // Photo message — save to pool gallery
+  if (message.photo) {
+    await handlePhoto(chatId, message.photo);
+    return NextResponse.json({ ok: true });
+  }
 
   if (text.startsWith("/start")) {
     const token = text.slice(6).trim();
@@ -356,7 +539,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (text === "/invite" || text.startsWith("/invite ")) {
+  if (text === "/checkin" || text === "נכנסתי לבריכה") {
+    await handleTelegramCheckin(chatId);
+  } else if (text === "/checkout" || text === "יצאתי מהבריכה") {
+    await handleTelegramCheckout(chatId);
+  } else if (text === "/rate") {
+    await sendMessage(chatId, "איך העומס בבריכה עכשיו? 🏊", buildRateKeyboard());
+  } else if (text === "/invite" || text.startsWith("/invite ")) {
     await sendMessage(chatId, "בחר תאריך לבריכה:", buildDateKeyboard());
   } else if (text === "/bring") {
     await sendMessage(chatId, "מה אתה מביא לבריכה? בחר מהרשימה או כתוב בחופשי 👇", buildBringKeyboard());
@@ -376,12 +565,16 @@ export async function POST(req: NextRequest) {
     await sendMessage(
       chatId,
       "🏊 UV Pool Bot — פקודות זמינות:\n\n" +
-      "/invite — זמן חברים לבריכה עם Google Calendar 📅\n" +
-      "/bring  — הודע מה אתה מביא לבריכה 🎒\n" +
+      "/checkin  — נכנסתי לבריכה! ✅\n" +
+      "/checkout — יצאתי מהבריכה 👋\n" +
+      "/rate     — דרג את עומס הבריכה ⭐\n" +
+      "/invite   — זמן חברים לבריכה עם Google Calendar 📅\n" +
+      "/bring    — הודע מה אתה מביא לבריכה 🎒\n" +
       "/bring [פריט] — כתוב ישירות מה אתה מביא\n" +
-      "/ask    — שאל אם מישהו יכול להביא פריט ❓\n" +
+      "/ask      — שאל אם מישהו יכול להביא פריט ❓\n" +
       "/ask [פריט] — שאל ישירות לגבי פריט\n" +
-      "/later  — הודע מתי אתה מגיע ⏰"
+      "/later    — הודע מתי אתה מגיע ⏰\n\n" +
+      "📸 אפשר גם לשלוח תמונה ישירות לגלריית הבריכה!"
     );
   }
 

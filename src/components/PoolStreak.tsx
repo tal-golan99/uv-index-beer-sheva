@@ -177,7 +177,7 @@ export default function PoolStreak() {
             <div key={d.dateStr} className="flex flex-col items-center gap-1">
               <div
                 className={[
-                  "h-7 w-7 rounded-md grid place-items-center",
+                  "h-8 w-8 rounded-full grid place-items-center",
                   d.visited
                     ? "bg-[color:var(--color-pool-500)]"
                     : "border-2 border-dashed border-slate-300 bg-transparent",
@@ -186,7 +186,7 @@ export default function PoolStreak() {
                 title={d.ddmm}
               >
                 {d.visited && (
-                  <span className="text-[9px] text-white leading-none select-none">🏊</span>
+                  <span className="text-sm leading-none select-none">🏊</span>
                 )}
               </div>
               <span className="text-[9px] font-semibold text-[color:var(--color-ink-2)]">

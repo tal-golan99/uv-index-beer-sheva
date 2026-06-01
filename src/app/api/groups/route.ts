@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { randomBytes } from "crypto";
 
 function getAdmin() {
   return createClient(
@@ -35,9 +36,10 @@ export async function POST(request: Request) {
   if (!name?.trim()) return NextResponse.json({ error: "Missing name" }, { status: 400 });
 
   const admin = getAdmin();
+  const inviteCode = randomBytes(4).toString("hex");
   const { data: group, error: groupErr } = await admin
     .from("pool_groups")
-    .insert({ name: name.trim(), created_by: user.id })
+    .insert({ name: name.trim(), created_by: user.id, invite_code: inviteCode })
     .select()
     .single();
 

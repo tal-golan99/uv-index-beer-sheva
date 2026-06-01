@@ -17,6 +17,7 @@ import WeeklyChart from "@/components/WeeklyChart";
 import PoolBuddiesCTA from "@/components/PoolBuddiesCTA";
 import PoolKingBanner from "@/components/PoolKingBanner";
 import ShakeHananPopup from "@/components/ShakeHananPopup";
+import MoreUVCountdownPopup from "@/components/MoreUVCountdownPopup";
 import EquipmentSection from "@/components/EquipmentSection";
 import CommentsSection from "@/components/CommentsSection";
 import MoreUVButton from "@/components/MoreUVButton";
@@ -96,6 +97,7 @@ export default async function HomePage() {
     <div className="relative min-h-screen">
       <BodyTheme poolTime={poolTime} nightMode={nightMode} />
       <ShakeHananPopup />
+      <MoreUVCountdownPopup />
 
       {/* Decorative sun blob — centered to match the background gradient's 50% -10% radial */}
       <div
