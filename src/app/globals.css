@@ -182,9 +182,11 @@ body.night-mode .radius-nested {
 .cta-btn {
   transition: transform 0.18s var(--ease-out-quart), box-shadow 0.22s var(--ease-out-quart);
 }
-.cta-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg) !important;
+@media (hover: hover) and (pointer: fine) {
+  .cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg) !important;
+  }
 }
 .cta-btn:active {
   transform: scale(0.97);
@@ -286,8 +288,8 @@ body.night-mode .radius-nested {
   opacity: 0;
   transform: translateY(26px);
   transition:
-    opacity 0.7s var(--ease-out-expo),
-    transform 0.7s var(--ease-out-expo);
+    opacity 0.5s var(--ease-out-expo),
+    transform 0.5s var(--ease-out-expo);
   transition-delay: var(--reveal-delay, 0ms);
   will-change: opacity, transform;
 }
@@ -297,11 +299,35 @@ body.night-mode .radius-nested {
   transform: none;
 }
 
+/* Exit animation for popovers / dropdowns */
+@keyframes pop-out {
+  from { transform: scale(1) translateY(0); opacity: 1; }
+  to   { transform: scale(0.96) translateY(-4px); opacity: 0; }
+}
+.anim-pop-out { animation: pop-out 0.15s var(--ease-out-expo) both; }
+
+/* Weekly forecast cards — touch-safe hover, press feedback, staggered entrance */
+.week-day-card {
+  transition: transform 200ms var(--ease-out-quart);
+  animation: rise-in 0.4s var(--ease-out-expo) both;
+  animation-delay: var(--stagger, 0ms);
+}
+@media (hover: hover) and (pointer: fine) {
+  .week-day-card:hover { transform: translateY(-3px); }
+}
+.week-day-card:active { transform: scale(0.97); }
+
+/* Streak day squares — staggered entrance */
+.streak-day {
+  animation: pop-in 0.35s var(--ease-out-expo) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .anim-bob, .anim-sun, .anim-pop, .anim-pop-spring, .anim-rise, .anim-blob,
+  .anim-bob, .anim-sun, .anim-pop, .anim-pop-spring, .anim-pop-out, .anim-rise, .anim-blob,
   .title-underline::after, .ripple,
   .water-caustics::before, .water-caustics::after,
-  .uv-aura {
+  .uv-aura, .week-day-card, .streak-day {
     animation: none !important;
   }
   .title-underline::after { transform: scaleX(1); }

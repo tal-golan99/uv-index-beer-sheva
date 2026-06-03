@@ -171,10 +171,10 @@ export default function PoolStreak() {
 
       {/* Last 7 days squares + DD/MM labels */}
       <div className="flex justify-center gap-1.5">
-        {days.map((d) => {
+        {days.map((d, i) => {
           const isToday = d.dateStr === todayStr;
           return (
-            <div key={d.dateStr} className="flex flex-col items-center gap-1">
+            <div key={d.dateStr} className="streak-day flex flex-col items-center gap-1" style={{ "--stagger": `${i * 30}ms` } as React.CSSProperties}>
               <div
                 className={[
                   "h-8 w-8 rounded-full grid place-items-center",

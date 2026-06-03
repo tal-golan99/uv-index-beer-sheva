@@ -9,23 +9,20 @@ interface Props {
   today: string;
 }
 
-function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
+function DayCard({ day, isToday, index }: { day: DailyUV; isToday: boolean; index: number }) {
   const level = getUVLevel(day.max_uv);
   const barPct = Math.min(day.max_uv / 11, 1) * 100;
-  // Slice directly from YYYY-MM-DD to get zero-padded "DD/MM" — avoids locale
-  // ambiguity where he-IL renders "31.5" which looks like a UV value.
   const dateLabel = `${day.date.slice(8, 10)}/${day.date.slice(5, 7)}`;
 
   return (
     <div
-      className="flex-shrink-0 sm:flex-1 min-w-[84px] flex flex-col items-center gap-2 radius-nested p-4 transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] hover:-translate-y-0.5 cursor-default"
+      className="week-day-card flex-shrink-0 sm:flex-1 min-w-[84px] flex flex-col items-center gap-2 radius-nested p-4 cursor-default"
       style={{
-        // One coherent depth cue: today gets a tint + a clear 2px border (no
-        // hairline + oversized colored shadow). Everyone shares the same soft shadow.
         background: isToday ? level.bg : "white",
         border: isToday ? `2px solid ${level.color}` : "1px solid var(--color-pool-100)",
         boxShadow: "var(--shadow-sm)",
-      }}
+        "--stagger": `${index * 40}ms`,
+      } as React.CSSProperties}
     >
       <p className="text-xs font-bold text-[color:var(--color-ink-2)]">{dayNameHe(day.date)}</p>
       <p className="text-[10px] text-[color:var(--color-ink-2)]">{dateLabel}</p>
@@ -33,8 +30,8 @@ function DayCard({ day, isToday }: { day: DailyUV; isToday: boolean }) {
       {/* UV bar */}
       <div className="w-full h-1.5 rounded-full" style={{ background: "var(--color-pool-100)" }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${barPct}%`, backgroundColor: level.color }}
+          className="h-full rounded-full"
+          style={{ width: `${barPct}%`, backgroundColor: level.color, transition: "width 500ms var(--ease-out-expo)" }}
         />
       </div>
 
@@ -66,8 +63,8 @@ export default function WeeklyChart({ week, today }: Props) {
       <h2 className="display-title px-1 text-lg text-[color:var(--color-ink)]">תחזית שבועית</h2>
       <div className="relative">
         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" dir="ltr" style={{ touchAction: "pan-x" }}>
-          {week.map((day) => (
-            <DayCard key={day.date} day={day} isToday={day.date === today} />
+          {week.map((day, index) => (
+            <DayCard key={day.date} day={day} isToday={day.date === today} index={index} />
           ))}
         </div>
         {/* Fade hint: scroll is dir=ltr so overflow is on the right edge */}

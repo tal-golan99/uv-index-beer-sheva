@@ -9,6 +9,8 @@ export default function HeaderAuth() {
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,11 +27,19 @@ export default function HeaderAuth() {
     function handleClick(e: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = setTimeout(() => setIsVisible(false), 150);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
+
+  function closeDropdown() {
+    setIsOpen(false);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => setIsVisible(false), 150);
+  }
 
   if (user === undefined) {
     return <div className="h-12 w-28 animate-pulse rounded-2xl bg-[color:var(--color-pool-100)]" />;
@@ -45,7 +55,7 @@ export default function HeaderAuth() {
       <div ref={wrapperRef} className="relative">
         <button
           type="button"
-          onClick={() => setIsOpen((o) => !o)}
+          onClick={() => { if (isOpen) closeDropdown(); else { setIsOpen(true); setIsVisible(true); } }}
           className="pressable radius-nested shadow-pool-sm flex items-center gap-2.5 bg-white px-3 py-2 text-sm font-bold text-[color:var(--color-ink)] ring-1 ring-[color:var(--color-pool-200)] transition-colors hover:bg-[color:var(--color-pool-50)]"
         >
           {avatar ? (
@@ -60,14 +70,14 @@ export default function HeaderAuth() {
           <span className="text-[color:var(--color-ink-3)] text-xs" aria-hidden>▾</span>
         </button>
 
-        {isOpen && (
+        {isVisible && (
           <div
-            className="absolute left-0 top-full mt-2 z-50 min-w-[160px] rounded-2xl bg-white shadow-pool-lg ring-1 ring-[color:var(--color-pool-100)] overflow-hidden anim-pop"
-            style={{ boxShadow: "0 8px 32px -4px rgba(14,147,212,0.18), 0 2px 8px -2px rgba(0,0,0,0.08)" }}
+            className={`absolute left-0 top-full mt-2 z-50 min-w-[160px] rounded-2xl bg-white shadow-pool-lg ring-1 ring-[color:var(--color-pool-100)] overflow-hidden ${isOpen ? "anim-pop" : "anim-pop-out"}`}
+            style={{ boxShadow: "0 8px 32px -4px rgba(14,147,212,0.18), 0 2px 8px -2px rgba(0,0,0,0.08)", transformOrigin: "top left" }}
           >
             <Link
               href="/account"
-              onClick={() => setIsOpen(false)}
+              onClick={closeDropdown}
               className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
               <span>👤</span> הפרופיל שלי
@@ -75,7 +85,7 @@ export default function HeaderAuth() {
             <div className="h-px bg-[color:var(--color-pool-100)]" />
             <Link
               href="/groups"
-              onClick={() => setIsOpen(false)}
+              onClick={closeDropdown}
               className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
               <span>🏊</span> הקבוצות שלי
@@ -83,7 +93,7 @@ export default function HeaderAuth() {
             <div className="h-px bg-[color:var(--color-pool-100)]" />
             <Link
               href="/stats"
-              onClick={() => setIsOpen(false)}
+              onClick={closeDropdown}
               className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
               <span>📊</span> סטטיסטיקה

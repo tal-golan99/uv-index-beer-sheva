@@ -71,7 +71,7 @@ export default function ImageSlider({
           fill
           priority={idx === 0}
           sizes="(min-width: 768px) 640px, 100vw"
-          className="object-cover transition-opacity duration-700"
+          className="object-cover transition-opacity duration-500"
           style={{ opacity: idx === i ? 1 : 0 }}
         />
       ))}
@@ -109,10 +109,11 @@ export default function ImageSlider({
                 className="py-2 px-1"
               >
                 <span
-                  className="block h-2 rounded-full transition-all"
+                  className="block h-2 rounded-full"
                   style={{
                     width: idx === i ? 18 : 8,
                     background: idx === i ? "var(--color-pool-400)" : "rgba(255,255,255,0.6)",
+                    transition: "width 200ms ease-out, background-color 150ms ease",
                   }}
                 />
               </button>
