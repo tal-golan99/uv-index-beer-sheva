@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { User as UserIcon, UsersThree, ChartBar } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
 
@@ -80,7 +81,7 @@ export default function HeaderAuth() {
               onClick={closeDropdown}
               className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
-              <span>👤</span> הפרופיל שלי
+              <UserIcon size={20} weight="duotone" color="var(--color-pool-600)" aria-hidden /> הפרופיל שלי
             </Link>
             <div className="h-px bg-[color:var(--color-pool-100)]" />
             <Link
@@ -88,7 +89,7 @@ export default function HeaderAuth() {
               onClick={closeDropdown}
               className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
-              <span>🏊</span> הקבוצות שלי
+              <UsersThree size={20} weight="duotone" color="var(--color-pool-600)" aria-hidden /> הקבוצות שלי
             </Link>
             <div className="h-px bg-[color:var(--color-pool-100)]" />
             <Link
@@ -96,7 +97,7 @@ export default function HeaderAuth() {
               onClick={closeDropdown}
               className="flex items-center gap-2.5 px-4 py-3 text-base font-semibold text-[color:var(--color-ink)] hover:bg-[color:var(--color-pool-50)] transition-colors"
             >
-              <span>📊</span> סטטיסטיקה
+              <ChartBar size={20} weight="duotone" color="var(--color-pool-600)" aria-hidden /> סטטיסטיקה
             </Link>
           </div>
         )}

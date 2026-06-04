@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRight, UsersThree, Copy, Check } from "@phosphor-icons/react";
 import Wordmark from "@/components/Wordmark";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -93,11 +93,14 @@ export default function GroupsPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <ArrowRight size={18} aria-hidden /> חזרה
+          חזרה <ArrowRight size={18} aria-hidden />
         </Link>
 
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-black text-[color:var(--color-ink)]">🏊 הקבוצות שלי</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-black text-[color:var(--color-ink)]">
+            <UsersThree size={26} weight="duotone" color="var(--color-pool-600)" aria-hidden />
+            הקבוצות שלי
+          </h1>
           <Wordmark size="sm" />
         </div>
 
@@ -131,7 +134,7 @@ export default function GroupsPage() {
         <div className="space-y-3">
           {groups.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
-              <p className="text-4xl mb-3">🏊</p>
+              <UsersThree size={44} weight="duotone" color="var(--color-pool-400)" className="mx-auto mb-3" aria-hidden />
               <p className="text-base font-semibold text-[color:var(--color-ink-2)]">עוד אין קבוצות</p>
               <p className="text-sm text-[color:var(--color-ink-3)] mt-1">צור קבוצה ושלח לינק לחברים להצטרף</p>
             </div>
@@ -160,9 +163,13 @@ export default function GroupsPage() {
                     <button
                       type="button"
                       onClick={() => copyInviteLink(g.invite_code)}
-                      className="flex-1 rounded-xl bg-[color:var(--color-pool-50)] px-4 py-2.5 text-sm font-bold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)] hover:ring-[color:var(--color-pool-400)] transition-all"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--color-pool-50)] px-4 py-2.5 text-sm font-bold text-[color:var(--color-pool-700)] ring-1 ring-[color:var(--color-pool-200)] hover:ring-[color:var(--color-pool-400)] transition-all"
                     >
-                      {copiedCode === g.invite_code ? "✓ הועתק!" : "📋 העתק לינק"}
+                      {copiedCode === g.invite_code ? (
+                        <><Check size={16} weight="bold" aria-hidden /> הועתק!</>
+                      ) : (
+                        <><Copy size={16} weight="bold" aria-hidden /> העתק לינק</>
+                      )}
                     </button>
                     <a
                       href={waUrl}

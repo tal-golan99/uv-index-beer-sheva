@@ -98,11 +98,6 @@ export default function AccountPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 
-  // Comment state
-  const [commentText, setCommentText] = useState("");
-  const [postingComment, setPostingComment] = useState(false);
-  const [commentSent, setCommentSent] = useState(false);
-
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.replace("/register"); return; }
@@ -122,21 +117,6 @@ export default function AccountPage() {
       .catch(() => setLoading(false));
 
   }, [supabase, router]);
-
-  async function postComment(e: React.FormEvent) {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    setPostingComment(true);
-    await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: commentText }),
-    });
-    setCommentText("");
-    setPostingComment(false);
-    setCommentSent(true);
-    setTimeout(() => setCommentSent(false), 3000);
-  }
 
   // Start Telegram setup when user clicks Connect
   async function startTelegramSetup() {
@@ -270,7 +250,7 @@ export default function AccountPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <ArrowRight size={18} aria-hidden /> חזרה
+          חזרה <ArrowRight size={18} aria-hidden />
         </Link>
 
         <div className="flex items-center justify-between gap-3">
@@ -414,32 +394,6 @@ export default function AccountPage() {
           <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">🏊 הקבוצות שלי</h2>
           <span className="text-[color:var(--color-ink-3)] text-sm">←</span>
         </Link>
-
-        {/* Comment */}
-        <div className="rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">
-          <h2 className="text-base font-extrabold text-[color:var(--color-ink)]">💬 כתוב תגובה</h2>
-          <form onSubmit={postComment} className="flex gap-2">
-            <input
-              type="text"
-              placeholder="כתוב משהו..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              maxLength={500}
-              className={inputClass}
-            />
-            <button
-              type="submit"
-              disabled={postingComment || !commentText.trim()}
-              className="shrink-0 rounded-2xl px-5 py-3 text-sm font-extrabold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(90deg, var(--color-pool-600), var(--color-pool-400))" }}
-            >
-              {postingComment ? "..." : "שלח"}
-            </button>
-          </form>
-          {commentSent && (
-            <p className="text-xs text-green-600 font-semibold">✓ תגובה נשלחה!</p>
-          )}
-        </div>
 
         <button
           type="button"

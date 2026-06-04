@@ -153,14 +153,32 @@ export default function LandingPage() {
             flip
           />
         </Reveal>
+        {/* Third value prop as a full-width media banner — breaks the two-row zigzag rhythm */}
         <Reveal once>
-          <FeatureRow
-            img="/pool/life4.jpg"
-            alt="שיזוף על שפת הבריכה"
-            icon={<PaperPlaneTilt weight="duotone" size={28} color="var(--color-pool-600)" />}
-            title="התראה לפני השיא"
-            desc="הבוט בטלגרם שולח הודעה שעה לפני שה-UV נוגע ב-9. עד שאחרים מבינים שיצא שמש, אתה כבר עם המגבת ביד."
-          />
+          <div className="radius-card shadow-pool-md relative overflow-hidden ring-1 ring-[color:var(--color-pool-200)]">
+            <div className="relative aspect-[16/10] sm:aspect-[21/9]">
+              <Image
+                src="/pool/life4.jpg"
+                alt="שיזוף על שפת הבריכה"
+                fill
+                sizes="(min-width: 768px) 960px, 100vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a5784]/85 via-[#0a5784]/35 to-transparent" />
+            </div>
+            <div className="absolute inset-x-0 bottom-0 p-6 text-right sm:p-10">
+              <span
+                className="mb-3 inline-grid h-12 w-12 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm"
+                aria-hidden
+              >
+                <PaperPlaneTilt weight="duotone" size={28} color="#ffffff" />
+              </span>
+              <h3 className="display-title text-2xl text-white sm:text-3xl">התראה לפני השיא</h3>
+              <p className="prose-pretty mt-2 max-w-md text-base leading-relaxed text-white/85">
+                הבוט בטלגרם שולח הודעה שעה לפני שה-UV נוגע ב-9. עד שאחרים מבינים שיצא שמש, אתה כבר עם המגבת ביד.
+              </p>
+            </div>
+          </div>
         </Reveal>
       </section>
 

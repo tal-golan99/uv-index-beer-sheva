@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PersonSimpleSwim, ChatCircleDots } from "@phosphor-icons/react";
 
 interface Comment {
   id: string;
@@ -33,7 +34,8 @@ export default function CommentsSection() {
         <h2 className="px-1 text-lg font-extrabold text-[color:var(--color-ink)] md:text-xl">
           תגובות
         </h2>
-        <div className="radius-nested bg-[color:var(--color-pool-50)] px-5 py-6 text-center ring-1 ring-[color:var(--color-pool-100)]">
+        <div className="radius-nested bg-[color:var(--color-pool-50)] px-5 py-8 text-center ring-1 ring-[color:var(--color-pool-100)]">
+          <ChatCircleDots size={40} weight="duotone" color="var(--color-pool-400)" className="mx-auto mb-2" aria-hidden />
           <p className="text-base font-bold text-[color:var(--color-ink-2)]">היה הראשון להגיב</p>
           <p className="mt-1 text-sm text-[color:var(--color-ink-3)]">
             את הטקסט כותבים{" "}
@@ -59,7 +61,7 @@ export default function CommentsSection() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={c.profiles.avatar_url} alt={c.profiles.display_name ?? ""} className="h-full w-full object-cover" />
               ) : (
-                <span>🏊</span>
+                <PersonSimpleSwim size={18} weight="duotone" color="var(--color-pool-500)" aria-hidden />
               )}
             </div>
             <div className="min-w-0 flex-1">

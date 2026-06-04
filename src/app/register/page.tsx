@@ -55,7 +55,7 @@ export default function RegisterPage() {
           href="/"
           className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
         >
-          <ArrowRight size={18} aria-hidden /> חזרה
+          חזרה <ArrowRight size={18} aria-hidden />
         </Link>
 
         <div className="space-y-6 rounded-3xl bg-white p-8 shadow-pool-lg ring-1 ring-[color:var(--color-pool-100)]">

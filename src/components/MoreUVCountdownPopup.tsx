@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Fire } from "@phosphor-icons/react";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const COUPON = "MOR10";
 const SESSION_KEY = "more-uv-offer-seen";
+// Shared across all auto-popups: only one interruption per session.
+const INTERRUPT_KEY = "pool-interrupt-shown";
 
 function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -22,11 +25,13 @@ export default function MoreUVCountdownPopup() {
   const startRef = useRef<number>(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Show after 2s delay, once per session
+  // Show after 2s delay, once per session — and only if no other popup already interrupted.
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (sessionStorage.getItem(SESSION_KEY) || sessionStorage.getItem(INTERRUPT_KEY)) return;
     const timer = setTimeout(() => {
+      if (sessionStorage.getItem(INTERRUPT_KEY)) return;
       sessionStorage.setItem(SESSION_KEY, "1");
+      sessionStorage.setItem(INTERRUPT_KEY, "1");
       setVisible(true);
     }, 2000);
     return () => clearTimeout(timer);
@@ -85,7 +90,7 @@ export default function MoreUVCountdownPopup() {
             ×
           </button>
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wide">
-            🔥 מבצע חד פעמי
+            <Fire size={14} weight="fill" aria-hidden /> מבצע חד פעמי
           </div>
           <h2 className="text-2xl font-extrabold leading-snug">
             10% הנחה<br />על Premium

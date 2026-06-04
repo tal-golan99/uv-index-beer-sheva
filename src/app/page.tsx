@@ -19,7 +19,6 @@ import PoolKingBanner from "@/components/PoolKingBanner";
 import ShakeHananPopup from "@/components/ShakeHananPopup";
 import MoreUVCountdownPopup from "@/components/MoreUVCountdownPopup";
 import EquipmentSection from "@/components/EquipmentSection";
-import CommentsSection from "@/components/CommentsSection";
 import MoreUVButton from "@/components/MoreUVButton";
 
 export const revalidate = 1800;
@@ -177,11 +176,6 @@ export default async function HomePage() {
           </section>
         </Reveal>
 
-        {/* Comments */}
-        <Reveal className="mt-8 block md:mt-12">
-          <CommentsSection />
-        </Reveal>
-
         {/* Bottom CTA — hidden for logged-in users */}
         <Reveal className="mt-8 block md:mt-12">
           <PoolBuddiesCTA />
@@ -198,7 +192,7 @@ export default async function HomePage() {
           {" · "}
           <span className="opacity-70">מקור: Open-Meteo</span>
           {" · "}
-          <a href="/more" className="font-bold text-[color:var(--color-pool-600)] hover:underline">More UV ✨</a>
+          <a href="/more" className="font-bold text-[color:var(--color-pool-600)] hover:underline">More UV</a>
         </footer>
       </div>
     </div>

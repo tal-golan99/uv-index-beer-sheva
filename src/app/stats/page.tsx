@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ChartBar, PersonSimpleSwim } from "@phosphor-icons/react/dist/ssr";
 import Wordmark from "@/components/Wordmark";
 
 function getAdmin() {
@@ -66,10 +66,13 @@ export default async function StatsPage() {
           </Link>
         </div>
 
-        <h1 className="text-2xl font-extrabold text-[color:var(--color-ink)]">
-          📊 הסטטיסטיקה של {displayName.split(" ")[0]}
+        <h1 className="flex items-center gap-2 text-2xl font-extrabold text-[color:var(--color-ink)]">
+          <ChartBar size={26} weight="duotone" color="var(--color-pool-600)" aria-hidden />
+          הסטטיסטיקה של {displayName.split(" ")[0]}
         </h1>
 
+        {/* Summary + status — grouped in one tinted band, not separate floating cards */}
+        <section className="surface-band space-y-3 p-4 sm:p-5">
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
@@ -118,6 +121,7 @@ export default async function StatsPage() {
             )}
           </div>
         </div>
+        </section>
 
         {/* Visit history */}
         {visits.length > 0 && (
@@ -126,8 +130,9 @@ export default async function StatsPage() {
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {visits.slice(0, 30).map((v) => (
                 <div key={v.visit_date} className="flex items-center justify-between rounded-xl bg-[color:var(--color-pool-50)] px-3 py-2">
-                  <span className="text-sm font-semibold text-[color:var(--color-ink)]">
-                    🏊 {v.visit_date.split("-").reverse().join("/")}
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink)]">
+                    <PersonSimpleSwim size={16} weight="duotone" color="var(--color-pool-500)" aria-hidden />
+                    {v.visit_date.split("-").reverse().join("/")}
                   </span>
                   {v.duration_minutes ? (
                     <span className="text-xs font-bold text-[color:var(--color-pool-600)]">
@@ -142,7 +147,7 @@ export default async function StatsPage() {
 
         {visits.length === 0 && (
           <div className="rounded-3xl bg-white p-8 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center space-y-2">
-            <p className="text-4xl">🏊</p>
+            <PersonSimpleSwim size={44} weight="duotone" color="var(--color-pool-400)" className="mx-auto" aria-hidden />
             <p className="text-sm font-semibold text-[color:var(--color-ink-2)]">עוד אין ביקורים מתועדים</p>
             <p className="text-xs text-[color:var(--color-ink-3)]">לחץ &quot;אני בבריכה&quot; בדף הבית כדי להתחיל לעקוב</p>
           </div>

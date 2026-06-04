@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, Backpack } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 const PRESET_ITEMS = ["🍺 בירות", "🧊 קרח", "🍉 אבטיח", "🧴 קרם הגנה", "🔊 רמקול", "🥏 פריסבי"];
@@ -112,7 +112,10 @@ export default function EquipmentSection() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="text-sm font-extrabold text-[color:var(--color-ink)]">🎒 מי מביא מה?</span>
+        <span className="flex items-center gap-2 text-sm font-extrabold text-[color:var(--color-ink)]">
+          <Backpack size={18} weight="duotone" color="var(--color-pool-500)" aria-hidden />
+          מי מביא מה?
+        </span>
         {open
           ? <CaretUp size={16} weight="bold" className="text-[color:var(--color-ink-3)]" aria-hidden />
           : <CaretDown size={16} weight="bold" className="text-[color:var(--color-ink-3)]" aria-hidden />

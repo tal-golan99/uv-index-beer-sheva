@@ -20,7 +20,7 @@ const suez = Suez_One({
 
 export const metadata: Metadata = {
   title: "UV Pool · באר שבע",
-  description: "מדד UV בזמן אמת ומי נמצא בבריכה עכשיו — באר שבע",
+  description: "מדד UV בזמן אמת ומי נמצא בבריכה עכשיו, בבאר שבע",
 };
 
 export default function RootLayout({

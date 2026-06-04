@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { getUVLevel, dayNameHe } from "@/lib/uv";
 import type { DailyUV } from "@/types";
 
@@ -9,70 +10,87 @@ interface Props {
   today: string;
 }
 
-function DayCard({ day, isToday, index }: { day: DailyUV; isToday: boolean; index: number }) {
-  const level = getUVLevel(day.max_uv);
-  const barPct = Math.min(day.max_uv / 11, 1) * 100;
-  const dateLabel = `${day.date.slice(8, 10)}/${day.date.slice(5, 7)}`;
+// Top of the bar scale. UV rarely exceeds this in Beer Sheva; clamps keep bars sane.
+const BAR_MAX = 11;
 
-  return (
-    <div
-      className="week-day-card flex-shrink-0 sm:flex-1 min-w-[84px] flex flex-col items-center gap-2 radius-nested p-4 cursor-default"
-      style={{
-        background: isToday ? level.bg : "white",
-        border: isToday ? `2px solid ${level.color}` : "1px solid var(--color-pool-100)",
-        boxShadow: "var(--shadow-sm)",
-        "--stagger": `${index * 40}ms`,
-      } as React.CSSProperties}
-    >
-      <p className="text-xs font-bold text-[color:var(--color-ink-2)]">{dayNameHe(day.date)}</p>
-      <p className="text-[10px] text-[color:var(--color-ink-2)]">{dateLabel}</p>
-
-      {/* UV bar */}
-      <div className="w-full h-1.5 rounded-full" style={{ background: "var(--color-pool-100)" }}>
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${barPct}%`, backgroundColor: level.color, transition: "width 500ms var(--ease-out-expo)" }}
-        />
-      </div>
-
-      {/* UV value — uses the AA-on-white text variant for readability */}
-      <p className="text-xl font-black tabular-nums" style={{ color: level.colorText }}>
-        {day.max_uv.toFixed(1)}
-      </p>
-
-      {/* Reserve fixed height so all cards stay the same height regardless of badge */}
-      <div className="h-5 flex items-center justify-center">
-        {isToday && (
-          <span
-            className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-            style={{ background: level.colorText }}
-          >
-            היום
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
+/**
+ * Seven-day forecast as a compact column chart: bar HEIGHT encodes the day's max UV
+ * and bar COLOR encodes severity, so the week's shape reads at a glance instead of as
+ * seven identical tiles. The number stays in the adaptive ink token (not the level's
+ * dark text variant) so it survives night mode, where the panel darkens.
+ */
 export default function WeeklyChart({ week, today }: Props) {
-  // A plain section (not an outer card) so the day items are the only card layer —
-  // avoids the card-in-card pattern, matching PoolStreak / PoolPresence.
+  const [grown, setGrown] = useState(false);
+
+  // Grow the bars from the baseline once mounted (skipped instantly under reduced motion,
+  // since a 0%→pct height change with no transition is imperceptible).
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <section className="space-y-3">
       <h2 className="display-title px-1 text-lg text-[color:var(--color-ink)]">תחזית שבועית</h2>
-      <div className="relative">
-        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" dir="ltr" style={{ touchAction: "pan-x" }}>
-          {week.map((day, index) => (
-            <DayCard key={day.date} day={day} isToday={day.date === today} index={index} />
-          ))}
+
+      <div className="radius-nested bg-white p-4 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm sm:p-5">
+        {/* dir=ltr so the days run chronologically left → right */}
+        <div className="flex items-end gap-1.5 sm:gap-2" dir="ltr">
+          {week.map((day) => {
+            const level = getUVLevel(day.max_uv);
+            const isToday = day.date === today;
+            const pct = Math.min(day.max_uv / BAR_MAX, 1) * 100;
+            const dateLabel = `${day.date.slice(8, 10)}/${day.date.slice(5, 7)}`;
+
+            return (
+              <div
+                key={day.date}
+                className="flex flex-1 flex-col items-center gap-2 rounded-xl py-2"
+                style={isToday ? { background: level.bg } : undefined}
+              >
+                <span className="text-sm font-black tabular-nums text-[color:var(--color-ink)]">
+                  {day.max_uv.toFixed(1)}
+                </span>
+
+                {/* Vertical track + color-coded fill */}
+                <div
+                  className="relative h-24 w-2.5 overflow-hidden rounded-full sm:w-3"
+                  style={{ background: "var(--color-pool-100)" }}
+                >
+                  <div
+                    className="absolute inset-x-0 bottom-0 rounded-full"
+                    style={{
+                      height: grown ? `${pct}%` : "0%",
+                      background: level.color,
+                      transition: "height 600ms var(--ease-out-expo)",
+                    }}
+                  />
+                </div>
+
+                <span
+                  className={`whitespace-nowrap text-[10px] text-[color:var(--color-ink-2)] sm:text-[11px] ${
+                    isToday ? "font-extrabold" : "font-bold"
+                  }`}
+                >
+                  {dayNameHe(day.date)}
+                </span>
+                <span className="text-[10px] text-[color:var(--color-ink-3)]">{dateLabel}</span>
+
+                {/* Fixed-height slot keeps every column the same height with or without the badge */}
+                <div className="flex h-4 items-center">
+                  {isToday && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[9px] font-bold text-white"
+                      style={{ background: level.colorText }}
+                    >
+                      היום
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        {/* Fade hint: scroll is dir=ltr so overflow is on the right edge */}
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-10"
-          style={{ background: "linear-gradient(to left, var(--color-pool-50), transparent)" }}
-          aria-hidden
-        />
       </div>
     </section>
   );

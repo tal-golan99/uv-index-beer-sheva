@@ -2,21 +2,27 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Fire } from "@phosphor-icons/react";
 
 const SESSION_KEY = "shake-hanan-seen";
+// Shared across all auto-popups: only one interruption per session.
+const INTERRUPT_KEY = "pool-interrupt-shown";
 
 export default function ShakeHananPopup() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (sessionStorage.getItem(SESSION_KEY) || sessionStorage.getItem(INTERRUPT_KEY)) return;
 
     function onScroll() {
       const scrolled = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
       if (scrolled >= 0.3) {
-        setVisible(true);
-        sessionStorage.setItem(SESSION_KEY, "1");
         window.removeEventListener("scroll", onScroll);
+        // Another popup may have fired while we waited — yield to it.
+        if (sessionStorage.getItem(INTERRUPT_KEY)) return;
+        sessionStorage.setItem(SESSION_KEY, "1");
+        sessionStorage.setItem(INTERRUPT_KEY, "1");
+        setVisible(true);
       }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -52,10 +58,10 @@ export default function ShakeHananPopup() {
           {/* Badge */}
           <div className="absolute top-4 right-4">
             <span
-              className="rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white"
               style={{ background: "linear-gradient(90deg, #f59e0b, #ef4444)" }}
             >
-              🔥 רק השבוע
+              <Fire size={14} weight="fill" aria-hidden /> רק השבוע
             </span>
           </div>
           {/* Close */}
