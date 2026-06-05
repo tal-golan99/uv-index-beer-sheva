@@ -18,11 +18,13 @@ export async function GET() {
 
   const { data, error } = await getAdmin()
     .from("pool_group_members")
-    .select("group_id, pool_groups(id, name, invite_code, created_by, created_at)")
+    .select("group_id, notifications_enabled, pool_groups(id, name, invite_code, created_by, created_at)")
     .eq("user_id", user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const groups = (data ?? []).map((r) => r.pool_groups).filter(Boolean);
+  const groups = (data ?? [])
+    .filter((r) => r.pool_groups)
+    .map((r) => ({ ...(r.pool_groups as object), notifications_enabled: r.notifications_enabled }));
   return NextResponse.json(groups);
 }
 

@@ -3,7 +3,8 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ChartBar, PersonSimpleSwim } from "@phosphor-icons/react/dist/ssr";
-import Wordmark from "@/components/Wordmark";
+import HeaderAuth from "@/components/HeaderAuth";
+import PoolStreak from "@/components/PoolStreak";
 
 function getAdmin() {
   return createClient(
@@ -28,17 +29,25 @@ export default async function StatsPage() {
 
   const admin = getAdmin();
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 
-  const [allVisits, recentVisits, profileData] = await Promise.all([
+  // Compute boundaries from UTC midnight of today's Jerusalem date — same logic as PoolStreak
+  // so "last 7 days" is exactly 7 calendar dates (today + 6 prior), never 8.
+  const todayUtcMidnight = new Date(`${today}T00:00:00Z`);
+  const sevenDaysAgoDate = new Date(todayUtcMidnight);
+  sevenDaysAgoDate.setUTCDate(todayUtcMidnight.getUTCDate() - 6);
+  const sevenDaysAgo = sevenDaysAgoDate.toISOString().slice(0, 10);
+
+  const thirtyDaysAgoDate = new Date(todayUtcMidnight);
+  thirtyDaysAgoDate.setUTCDate(todayUtcMidnight.getUTCDate() - 29);
+  const thirtyDaysAgo = thirtyDaysAgoDate.toISOString().slice(0, 10);
+
+  const [allVisits, profileData] = await Promise.all([
     admin.from("pool_visits").select("visit_date, duration_minutes").eq("user_id", user.id).order("visit_date", { ascending: false }),
-    admin.from("pool_visits").select("visit_date, duration_minutes").eq("user_id", user.id).gte("visit_date", sevenDaysAgo),
-    admin.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle(),
+    admin.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
   ]);
 
   const visits = allVisits.data ?? [];
-  const last7 = recentVisits.data ?? [];
+  const last7 = visits.filter((v) => v.visit_date >= sevenDaysAgo);
   const last30 = visits.filter((v) => v.visit_date >= thirtyDaysAgo);
 
   const totalVisits = visits.length;
@@ -48,79 +57,69 @@ export default async function StatsPage() {
   const last30Count = last30.length;
   const lastVisit = visits[0]?.visit_date ?? null;
 
-  const daysSinceLast = lastVisit
-    ? Math.floor((new Date(today).getTime() - new Date(lastVisit).getTime()) / 86_400_000)
-    : null;
-
   const profile = profileData.data;
   const displayName = profile?.display_name ?? user.user_metadata?.full_name ?? "שחיין";
 
   return (
-    <main className="min-h-screen" dir="rtl">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-md space-y-6 px-4 pb-16 pt-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Wordmark />
-          <Link href="/" className="flex items-center gap-1 text-sm font-semibold text-[color:var(--color-ink-2)] hover:text-[color:var(--color-ink)] transition-colors">
-            חזרה <ArrowRight size={16} aria-hidden />
-          </Link>
+        {/* Back link */}
+        <Link
+          href="/"
+          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
+        >
+          חזרה <ArrowRight size={18} aria-hidden />
+        </Link>
+
+        {/* Title + HeaderAuth dropdown */}
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="flex items-center gap-2 text-2xl font-extrabold text-[color:var(--color-ink)]">
+            <ChartBar size={26} weight="duotone" color="var(--color-pool-600)" aria-hidden />
+            הסטטיסטיקה של {displayName.split(" ")[0]}
+          </h1>
+          <HeaderAuth />
         </div>
 
-        <h1 className="flex items-center gap-2 text-2xl font-extrabold text-[color:var(--color-ink)]">
-          <ChartBar size={26} weight="duotone" color="var(--color-pool-600)" aria-hidden />
-          הסטטיסטיקה של {displayName.split(" ")[0]}
-        </h1>
+        {/* 7-day visual streak calendar */}
+        <PoolStreak />
 
-        {/* Summary + status — grouped in one tinted band, not separate floating cards */}
+        {/* Summary + status */}
         <section className="surface-band space-y-3 p-4 sm:p-5">
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
-            <p className="text-4xl font-black text-[color:var(--color-pool-600)]">{totalVisits}</p>
-            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">ביקורים סה&quot;כ</p>
+          {/* Summary cards with staggered entrance */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: String(totalVisits), label: 'ביקורים סה"כ', size: "text-4xl", stagger: "0ms" },
+              { value: String(last7Count), label: "ב-7 ימים אחרונים", size: "text-4xl", stagger: "60ms" },
+              { value: totalMinutes > 0 ? formatDuration(totalMinutes) : "—", label: 'זמן בריכה סה"כ', size: "text-2xl", stagger: "120ms" },
+              { value: last7Minutes > 0 ? formatDuration(last7Minutes) : "—", label: "זמן ב-7 ימים", size: "text-2xl", stagger: "180ms" },
+            ].map(({ value, label, size, stagger }) => (
+              <div
+                key={label}
+                className="anim-pop rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center"
+                style={{ "--stagger": stagger } as React.CSSProperties}
+              >
+                <p className={`${size} font-black text-[color:var(--color-pool-600)]`}>{value}</p>
+                <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">{label}</p>
+              </div>
+            ))}
           </div>
-          <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
-            <p className="text-4xl font-black text-[color:var(--color-pool-600)]">{last7Count}</p>
-            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">ב-7 ימים אחרונים</p>
-          </div>
-          <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
-            <p className="text-2xl font-black text-[color:var(--color-pool-600)]">
-              {totalMinutes > 0 ? formatDuration(totalMinutes) : "—"}
-            </p>
-            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">זמן בריכה סה&quot;כ</p>
-          </div>
-          <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm text-center">
-            <p className="text-2xl font-black text-[color:var(--color-pool-600)]">
-              {last7Minutes > 0 ? formatDuration(last7Minutes) : "—"}
-            </p>
-            <p className="mt-1 text-xs font-semibold text-[color:var(--color-ink-3)]">זמן ב-7 ימים</p>
-          </div>
-        </div>
 
-        {/* Status card */}
-        <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">
-          <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">מצב נוכחי</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-[color:var(--color-ink-2)]">ביקורים ב-30 יום</span>
-              <span className="font-bold text-[color:var(--color-ink)]">{last30Count}</span>
+          {/* Status card — PoolStreak already shows days-since, so only show 30-day count + last date */}
+          <div className="anim-rise rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">
+            <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">מצב נוכחי</h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[color:var(--color-ink-2)]">ביקורים ב-30 יום</span>
+                <span className="font-bold text-[color:var(--color-ink)]">{last30Count}</span>
+              </div>
+              {lastVisit && (
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--color-ink-2)]">ביקור אחרון</span>
+                  <span className="font-bold text-[color:var(--color-ink)]">{lastVisit.split("-").reverse().join("/")}</span>
+                </div>
+              )}
             </div>
-            {daysSinceLast !== null && (
-              <div className="flex justify-between">
-                <span className="text-[color:var(--color-ink-2)]">ימים מאז הפעם האחרונה</span>
-                <span className={`font-bold ${daysSinceLast > 5 ? "text-red-600" : "text-[color:var(--color-pool-600)]"}`}>
-                  {daysSinceLast === 0 ? "היום!" : `${daysSinceLast} ימים`}
-                </span>
-              </div>
-            )}
-            {lastVisit && (
-              <div className="flex justify-between">
-                <span className="text-[color:var(--color-ink-2)]">ביקור אחרון</span>
-                <span className="font-bold text-[color:var(--color-ink)]">{lastVisit.split("-").reverse().join("/")}</span>
-              </div>
-            )}
           </div>
-        </div>
         </section>
 
         {/* Visit history */}

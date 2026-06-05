@@ -111,9 +111,11 @@ export default function ImageSlider({
                 <span
                   className="block h-2 rounded-full"
                   style={{
-                    width: idx === i ? 18 : 8,
+                    width: 18,
+                    transform: `scaleX(${idx === i ? 1 : 8 / 18})`,
+                    transformOrigin: "center",
                     background: idx === i ? "var(--color-pool-400)" : "rgba(255,255,255,0.6)",
-                    transition: "width 200ms ease-out, background-color 150ms ease",
+                    transition: "transform 200ms ease-out, background-color 150ms ease",
                   }}
                 />
               </button>

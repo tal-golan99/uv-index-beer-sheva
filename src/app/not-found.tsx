@@ -6,7 +6,7 @@ export default function NotFound() {
     <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <Wordmark size="sm" className="mb-8" />
 
-      <p className="display-title text-[color:var(--color-pool-700)]" style={{ fontSize: "clamp(3.5rem, 18vw, 7rem)" }}>
+      <p className="display-title display-num" style={{ fontSize: "clamp(3.5rem, 18vw, 7rem)" }}>
         404
       </p>
       <h1 className="display-title mt-1 text-2xl text-[color:var(--color-ink)] sm:text-3xl">

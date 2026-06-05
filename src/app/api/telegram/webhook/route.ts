@@ -503,8 +503,14 @@ export async function POST(req: NextRequest) {
   if (text.startsWith("/start")) {
     const token = text.slice(6).trim();
 
+    const siteUrlBase = process.env.NEXT_PUBLIC_APP_URL!;
+
     if (!token) {
-      await sendMessage(chatId, "שלח לינק מהאפליקציה כדי להירשם להתראות UV 🌞");
+      await sendMessage(
+        chatId,
+        "ברוך הבא ל-UV Pool! 🌞🏊\n\nכאן תקבל התראות כשהשמש חזקה מספיק לבריכה.\nלחץ על הכפתור כדי להירשם ולהתחבר לאתר:",
+        { inline_keyboard: [[{ text: "הירשם לאתר 🔗", url: `${siteUrlBase}/register` }]] }
+      );
       return NextResponse.json({ ok: true });
     }
 
@@ -516,26 +522,33 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!row) {
-      await sendMessage(chatId, "הלינק לא תקף או פג תוקפו. חזור לאפליקציה ונסה שוב.");
+      await sendMessage(
+        chatId,
+        "הלינק לא תקף או פג תוקפו. חזור לאתר וצור לינק חדש.",
+        { inline_keyboard: [[{ text: "חזור לאתר 🔗", url: siteUrlBase }]] }
+      );
       return NextResponse.json({ ok: true });
     }
 
     if (new Date(row.expires_at) < new Date()) {
       await admin.from("pending_telegram_tokens").delete().eq("token", token);
-      await sendMessage(chatId, "הלינק פג תוקף. חזור לאפליקציה וצור לינק חדש.");
+      await sendMessage(
+        chatId,
+        "הלינק פג תוקף. חזור לאתר וצור לינק חדש.",
+        { inline_keyboard: [[{ text: "חזור לאתר 🔗", url: siteUrlBase }]] }
+      );
       return NextResponse.json({ ok: true });
     }
 
     await admin.from("profiles").update({ telegram_chat_id: chatId }).eq("id", row.user_id);
     await admin.from("pending_telegram_tokens").delete().eq("token", token);
 
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL!;
     await sendMessage(
       chatId,
       "מעולה! 🎉 נרשמת בהצלחה להתראות ה-UV.\n" +
         "מעכשיו נשלח לך התראה כשהשמש חזקה מדי — שעה לפני השיא ובשיא עצמו ☀️\n\n" +
         "חזור לאפליקציה כדי לנהל את הפרופיל שלך 👇",
-      { inline_keyboard: [[{ text: "🏊 חזור לאתר", url: siteUrl }]] }
+      { inline_keyboard: [[{ text: "🏊 חזור לאתר", url: siteUrlBase }]] }
     );
   }
 

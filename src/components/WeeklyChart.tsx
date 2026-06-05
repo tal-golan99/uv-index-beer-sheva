@@ -60,9 +60,11 @@ export default function WeeklyChart({ week, today }: Props) {
                   <div
                     className="absolute inset-x-0 bottom-0 rounded-full"
                     style={{
-                      height: grown ? `${pct}%` : "0%",
+                      height: `${pct}%`,
                       background: level.color,
-                      transition: "height 600ms var(--ease-out-expo)",
+                      transform: `scaleY(${grown ? 1 : 0})`,
+                      transformOrigin: "bottom",
+                      transition: "transform 600ms var(--ease-out-expo)",
                     }}
                   />
                 </div>

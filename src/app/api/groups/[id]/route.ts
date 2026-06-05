@@ -21,6 +21,25 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json(data ?? []);
 }
 
+// PATCH /api/groups/[id] — toggle per-group notification preference.
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const { notifications_enabled } = await req.json();
+
+  const { error } = await getAdmin()
+    .from("pool_group_members")
+    .update({ notifications_enabled })
+    .eq("group_id", id)
+    .eq("user_id", user.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 // DELETE /api/groups/[id] — leave a group.
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createSupabaseServer();

@@ -4,7 +4,6 @@ import HeaderAuth from "@/components/HeaderAuth";
 import Wordmark from "@/components/Wordmark";
 import { bannerForToday } from "@/lib/banner";
 import { LIFESTYLE_PHOTOS } from "@/lib/photos";
-import BodyTheme from "@/components/BodyTheme";
 import Reveal from "@/components/Reveal";
 import RotatingBanner from "@/components/RotatingBanner";
 import PoolStreak from "@/components/PoolStreak";
@@ -73,13 +72,6 @@ export default async function HomePage() {
   // Pool King — user with most total pool time in the last 7 days.
   const poolKing = await getPoolKing();
 
-  // Night mode: after sunset or before sunrise in Israel.
-  const nowMs = Date.now();
-  const sunriseMs = forecast.sunrise ? new Date(forecast.sunrise).getTime() : null;
-  const sunsetMs  = forecast.sunset  ? new Date(forecast.sunset).getTime()  : null;
-  const nightMode = sunriseMs !== null && sunsetMs !== null
-    ? nowMs < sunriseMs || nowMs > sunsetMs
-    : false;
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString("he-IL", {
@@ -94,7 +86,6 @@ export default async function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      <BodyTheme poolTime={poolTime} nightMode={nightMode} />
       <ShakeHananPopup />
       <MoreUVCountdownPopup />
 

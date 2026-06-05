@@ -100,7 +100,42 @@ body.night-mode .surface-band {
 }
 body.night-mode .radius-card,
 body.night-mode .radius-nested {
-  background: rgba(14, 30, 44, 0.85);
+  background: rgba(14, 30, 44, 0.85) !important;
+}
+
+/* Catch standalone rounded cards not using radius helpers */
+body.night-mode .rounded-3xl.bg-white:not(button):not(a),
+body.night-mode .rounded-2xl.bg-white:not(button):not(a),
+body.night-mode .rounded-xl.bg-white:not(button):not(a) {
+  background: rgba(14, 30, 44, 0.85) !important;
+}
+
+/* Sticky navigation bars */
+body.night-mode nav {
+  background: rgba(10, 28, 48, 0.88) !important;
+  border-color: rgba(14, 147, 212, 0.15) !important;
+}
+
+/* Light pool tokens → tinted glass in night mode */
+body.night-mode {
+  --color-pool-50:  rgba(14, 147, 212, 0.10);
+  --color-pool-100: rgba(14, 147, 212, 0.16);
+}
+
+/* Semantic status chips */
+body.night-mode .bg-red-50   { background: rgba(239, 68, 68, 0.12) !important; }
+body.night-mode .bg-green-50 { background: rgba(34, 197, 94, 0.12) !important; }
+body.night-mode .text-red-600   { color: #fca5a5 !important; }
+body.night-mode .text-red-500   { color: #f87171 !important; }
+body.night-mode .text-green-700 { color: #86efac !important; }
+
+/* 404 display number */
+.display-num { color: var(--color-pool-700); }
+body.night-mode .display-num { color: var(--color-pool-300); }
+
+/* UVGauge gender picker — active tab button inside pill strip */
+body.night-mode .night-tab-active {
+  background: rgba(14, 147, 212, 0.30) !important;
 }
 
 /* Hide scrollbar but keep scrolling */
@@ -284,16 +319,20 @@ body.night-mode .radius-nested {
 }
 
 /* ===== Scroll-reveal (IntersectionObserver-driven) — supports varied directions ===== */
+/* Content is visible by default (SSR, no-JS, OG crawlers). JS adds .is-hidden for
+   off-screen elements, then removes it and adds .reveal-in on scroll entry. */
 .reveal {
-  opacity: 0;
-  transform: translateY(26px);
   transition:
     opacity 0.5s var(--ease-out-expo),
     transform 0.5s var(--ease-out-expo);
   transition-delay: var(--reveal-delay, 0ms);
   will-change: opacity, transform;
 }
-.reveal-scale { transform: scale(0.96); }
+.reveal.is-hidden {
+  opacity: 0;
+  transform: translateY(26px);
+}
+.reveal.is-hidden.reveal-scale { transform: scale(0.96); }
 .reveal-in {
   opacity: 1;
   transform: none;
@@ -331,7 +370,7 @@ body.night-mode .radius-nested {
     animation: none !important;
   }
   .title-underline::after { transform: scaleX(1); }
-  .reveal {
+  .reveal, .reveal.is-hidden {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;

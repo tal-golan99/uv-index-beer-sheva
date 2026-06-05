@@ -114,12 +114,13 @@ export async function POST(request: Request) {
     let recipientUserIds: string[] = [];
 
     if (groupIds.length > 0) {
-      // Collect all members of all those groups (excluding the checker-in).
+      // Collect group members who have notifications enabled (excluding the checker-in).
       const { data: groupMembers } = await admin
         .from("pool_group_members")
         .select("user_id")
         .in("group_id", groupIds)
-        .neq("user_id", user.id);
+        .neq("user_id", user.id)
+        .eq("notifications_enabled", true);
       recipientUserIds = [...new Set((groupMembers ?? []).map((r) => r.user_id as string))];
     }
 

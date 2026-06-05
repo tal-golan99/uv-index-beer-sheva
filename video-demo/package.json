@@ -1,0 +1,22 @@
+{
+  "name": "uv-pool-video-demo",
+  "version": "1.0.0",
+  "description": "UV Pool Instagram Story Demo",
+  "scripts": {
+    "preview": "remotion preview src/index.ts --public-dir ../public",
+    "render": "remotion render src/index.ts UVPoolStory out/story.mp4 --public-dir ../public --codec=h264",
+    "render:test": "remotion render src/index.ts UVPoolStory out/story_test.mp4 --public-dir ../public --scale=0.667 --codec=h264"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.471",
+    "@remotion/cli": "^4.0.471",
+    "@remotion/renderer": "^4.0.471",
+    "@remotion/google-fonts": "^4.0.471"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "typescript": "^5.5.0"
+  }
+}

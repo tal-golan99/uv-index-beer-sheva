@@ -237,7 +237,7 @@ export default function UVGauge({ value }: Props) {
               aria-pressed={gender === g}
               className={`px-4 py-1 text-sm font-semibold rounded-full transition-colors ${
                 gender === g
-                  ? "bg-white text-[color:var(--color-ink)] shadow-sm"
+                  ? "bg-white night-tab-active text-[color:var(--color-ink)] shadow-sm"
                   : "text-[color:var(--color-ink-3)] hover:text-[color:var(--color-ink-2)]"
               }`}
             >

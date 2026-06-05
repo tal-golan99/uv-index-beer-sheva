@@ -14,12 +14,13 @@ interface Props {
 }
 
 /**
- * Fades + slides its children in as they enter the viewport, and back out when
- * they leave (unless `once`). Driven by IntersectionObserver — the standard,
- * performant approach for scroll-reveal. Honors prefers-reduced-motion via CSS.
+ * Content is visible by default (SSR / no-JS / OG crawlers). Once JS loads,
+ * off-screen elements receive `is-hidden` and animate in on scroll entry.
+ * Honors prefers-reduced-motion via CSS.
  */
 export default function Reveal({ children, delay = 0, once = false, variant = "up", className }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const [hidden, setHidden] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -29,10 +30,12 @@ export default function Reveal({ children, delay = 0, once = false, variant = "u
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          setHidden(false);
           setVisible(true);
           if (once) io.unobserve(entry.target);
-        } else if (!once) {
-          setVisible(false);
+        } else {
+          setHidden(true);
+          if (!once) setVisible(false);
         }
       },
       { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
@@ -42,12 +45,15 @@ export default function Reveal({ children, delay = 0, once = false, variant = "u
     return () => io.disconnect();
   }, [once]);
 
+  const cls = [
+    "reveal",
+    variant === "scale" ? "reveal-scale" : null,
+    hidden ? "is-hidden" : visible ? "reveal-in" : null,
+    className,
+  ].filter(Boolean).join(" ");
+
   return (
-    <div
-      ref={ref}
-      className={`reveal ${variant === "scale" ? "reveal-scale " : ""}${visible ? "reveal-in" : ""}${className ? ` ${className}` : ""}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
+    <div ref={ref} className={cls} style={{ transitionDelay: `${delay}ms` }}>
       {children}
     </div>
   );
