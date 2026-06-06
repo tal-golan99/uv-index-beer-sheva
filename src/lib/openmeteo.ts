@@ -10,6 +10,20 @@ interface OpenMeteoResponse {
   daily:  { time: string[]; uv_index_max: number[]; sunrise: string[]; sunset: string[] };
 }
 
+async function fetchWithRetry(url: string, init: RequestInit, attempts = 3): Promise<Response> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 3000 * i));
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[openmeteo] attempt ${i + 1} failed:`, err);
+    }
+  }
+  throw lastErr;
+}
+
 async function fetchOpenMeteoRaw(): Promise<{ week: DailyUV[]; current: number; sunrise: string | null; sunset: string | null }> {
   const params = new URLSearchParams({
     latitude:      BEER_SHEVA.latitude.toString(),
@@ -20,9 +34,9 @@ async function fetchOpenMeteoRaw(): Promise<{ week: DailyUV[]; current: number; 
     timezone:      TIMEZONE,
   });
 
-  const res = await fetch(
+  const res = await fetchWithRetry(
     `https://api.open-meteo.com/v1/forecast?${params}`,
-    { next: { revalidate: 1800 } }
+    { next: { revalidate: 1800 } } as RequestInit,
   );
   if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
 

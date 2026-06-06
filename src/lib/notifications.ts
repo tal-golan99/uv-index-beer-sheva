@@ -100,22 +100,33 @@ async function sendTelegramPhoto(
   caption: string,
   replyMarkup?: object
 ): Promise<void> {
-  // Skip photo if URL is localhost — Telegram can't fetch it; fall back to text message
   const isLocalUrl = photoUrl.includes("localhost") || photoUrl.includes("127.0.0.1");
 
   if (!isLocalUrl) {
-    const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl, caption };
-    if (replyMarkup) body.reply_markup = replyMarkup;
-    const res = await fetch(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+    try {
+      // Fetch the image ourselves so Telegram receives bytes, not a URL it must re-fetch.
+      // This avoids 400 errors when the OG endpoint is slow or Telegram can't reach Vercel.
+      const imgRes = await fetch(photoUrl, { signal: AbortSignal.timeout(20_000) });
+      if (imgRes.ok) {
+        const blob = await imgRes.blob();
+        const form = new FormData();
+        form.append("chat_id", chatId);
+        form.append("photo", blob, "chart.png");
+        form.append("caption", caption);
+        if (replyMarkup) form.append("reply_markup", JSON.stringify(replyMarkup));
+        const res = await fetch(
+          `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`,
+          { method: "POST", body: form }
+        );
+        if (res.ok) return;
+        const detail = await res.text().catch(() => "");
+        console.error(`[sendTelegramPhoto] Telegram error ${res.status} for chat ${chatId}:`, detail);
+      } else {
+        console.error(`[sendTelegramPhoto] Could not fetch chart image (${imgRes.status}) for chat ${chatId}`);
       }
-    );
-    if (res.ok) return;
-    console.error(`[sendTelegramPhoto] Telegram error ${res.status} for chat ${chatId} — falling back to text`);
+    } catch (err) {
+      console.error(`[sendTelegramPhoto] Error uploading photo for chat ${chatId}:`, err);
+    }
   }
 
   // Text-only fallback
