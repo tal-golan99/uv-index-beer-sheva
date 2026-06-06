@@ -32,7 +32,7 @@ function buildMessage(payload: AlertPayload): string {
     return `בעוד שעה (ב-${time}) קרינת ה-UV בבאר שבע תגיע ל-${payload.uvValue}. תעזוב הכל ותגיע לבריכה! 🏊`;
   }
 
-  return `קרינת ה-UV בבאר שבע הגיעה ל-${payload.uvValue} ב-${time}. מומלץ להישאר בצל, להשתמש בקרם הגנה SPF 50+ ולחבוש כובע.`;
+  return `האינדקס בשיא!, אם היה תירוץ מושלם להכחיש את הלימודים זה עכשיו`;
 }
 
 export async function notifyPoolEntry(

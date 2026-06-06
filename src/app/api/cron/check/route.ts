@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
-  const isEarlyMorning = now.getHours() < 9; // seed phase (UTC, matches Vercel 0 7 * * * trigger)
+  // Seed runs only during the 09:xx Israel hour (06:00 UTC in summer).
+  // Using Israel time prevents GitHub Actions / cron-job.org triggers at other hours from re-seeding.
+  const isEarlyMorning = israelHour >= 9 && israelHour < 10;
 
   const israelHour = Number(
     new Intl.DateTimeFormat("en-US", {
