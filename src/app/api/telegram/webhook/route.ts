@@ -395,6 +395,47 @@ async function handlePhoto(fromChatId: string, photos: { file_id: string; file_s
   }
 }
 
+/** Check if a chatId belongs to the admin (Tal Golan). */
+async function isAdmin(chatId: string): Promise<boolean> {
+  const admin = getAdmin();
+  const { data } = await admin
+    .from("profiles")
+    .select("email")
+    .eq("telegram_chat_id", chatId)
+    .maybeSingle();
+  const adminEmail = process.env.ADMIN_EMAIL ?? "talgolan1999@gmail.com";
+  return (data as { email?: string | null } | null)?.email === adminEmail;
+}
+
+/** Admin-only: broadcast a free-text message to ALL users including the admin. */
+async function handleBroadcast(fromChatId: string, message: string) {
+  if (!message.trim()) {
+    await sendMessage(fromChatId, "שימוש: /broadcast [הודעה]");
+    return;
+  }
+
+  if (!(await isAdmin(fromChatId))) {
+    await sendMessage(fromChatId, "⛔ אין לך הרשאה לפקודה זו.");
+    return;
+  }
+
+  const admin = getAdmin();
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("telegram_chat_id")
+    .not("telegram_chat_id", "is", null);
+
+  const recipients = (profiles ?? []).map((p) => p.telegram_chat_id as string);
+  const broadcastText = `📢 הודעת מנהל:\n\n${message.trim()}`;
+
+  const results = await Promise.allSettled(
+    recipients.map((id) => sendMessage(id, broadcastText))
+  );
+
+  const sent = results.filter((r) => r.status === "fulfilled").length;
+  await sendMessage(fromChatId, `✅ ההודעה נשלחה ל-${sent} משתמשים.`);
+}
+
 /** Broadcast a pool load rating to all users. */
 async function handleRating(fromChatId: string, level: string) {
   const admin = getAdmin();
@@ -574,6 +615,11 @@ export async function POST(req: NextRequest) {
     if (item) await handleAsk(chatId, item);
   } else if (text === "/later" || text.startsWith("/later ")) {
     await sendMessage(chatId, "באיזו שעה אתה מגיע? ⏰", buildLaterKeyboard());
+  } else if (text.startsWith("/broadcast ")) {
+    const msg = text.slice("/broadcast ".length);
+    await handleBroadcast(chatId, msg);
+  } else if (text === "/broadcast") {
+    await handleBroadcast(chatId, "");
   } else if (text === "/help") {
     await sendMessage(
       chatId,
@@ -586,7 +632,8 @@ export async function POST(req: NextRequest) {
       "/bring [פריט] — כתוב ישירות מה אתה מביא\n" +
       "/ask      — שאל אם מישהו יכול להביא פריט ❓\n" +
       "/ask [פריט] — שאל ישירות לגבי פריט\n" +
-      "/later    — הודע מתי אתה מגיע ⏰\n\n" +
+      "/later    — הודע מתי אתה מגיע ⏰\n" +
+      "/broadcast [הודעה] — שלח הודעה לכולם (אדמין בלבד) 📢\n\n" +
       "📸 אפשר גם לשלוח תמונה ישירות לגלריית הבריכה!"
     );
   }
