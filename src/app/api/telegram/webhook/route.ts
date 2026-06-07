@@ -398,13 +398,16 @@ async function handlePhoto(fromChatId: string, photos: { file_id: string; file_s
 /** Check if a chatId belongs to the admin (Tal Golan). */
 async function isAdmin(chatId: string): Promise<boolean> {
   const admin = getAdmin();
-  const { data } = await admin
+  // email lives in auth.users, not profiles — look up by UUID first
+  const { data: profile } = await admin
     .from("profiles")
-    .select("email")
+    .select("id")
     .eq("telegram_chat_id", chatId)
     .maybeSingle();
+  if (!profile?.id) return false;
+  const { data: { user } } = await admin.auth.admin.getUserById(profile.id as string);
   const adminEmail = process.env.ADMIN_EMAIL ?? "talgolan1999@gmail.com";
-  return (data as { email?: string | null } | null)?.email === adminEmail;
+  return user?.email === adminEmail;
 }
 
 /** Admin-only: broadcast a free-text message to ALL users including the admin. */
