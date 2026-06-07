@@ -21,6 +21,17 @@ export const dynamic = "force-dynamic";
 
 const THRESHOLD = 9;
 
+// Open-Meteo returns local Israel time strings like "2026-06-07T11:00" (no tz suffix).
+// On Vercel (UTC env) new Date("...T11:00") is parsed as 11:00 UTC = 14:00 Israel — 3h wrong.
+// This converts correctly by computing the Israel UTC offset at that instant.
+function parseIsraelLocalTime(localStr: string): Date {
+  const asUTC = new Date(localStr + "Z");
+  const israelStr = asUTC.toLocaleString("sv-SE", { timeZone: "Asia/Jerusalem" });
+  const israelAsUTC = new Date(israelStr.replace(" ", "T") + "Z");
+  const offsetMs = israelAsUTC.getTime() - asUTC.getTime();
+  return new Date(asUTC.getTime() - offsetMs);
+}
+
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -60,11 +71,22 @@ export async function GET(req: NextRequest) {
 }
 
 async function seedTodayAlert(date: string, now: Date) {
+  // Idempotency: skip if already seeded today (prevents duplicate morning notifications
+  // when cron fires twice in the 09:xx window, e.g. at 09:00 and 09:30).
+  const admin = getAdmin();
+  const { data: existing } = await admin
+    .from("daily_alerts")
+    .select("id")
+    .eq("date", date)
+    .maybeSingle();
+  if (existing) return;
+
   const forecast = await fetchUVForecast();
   const hit = findThresholdHour(forecast.today, THRESHOLD);
 
   if (hit) {
-    const thresholdAt = new Date(hit.time);
+    // hit.time is Israel local (e.g. "2026-06-07T11:00") — must parse with tz awareness.
+    const thresholdAt = parseIsraelLocalTime(hit.time);
     const warnAt = new Date(thresholdAt.getTime() - 60 * 60 * 1000);
     await upsertDailyAlert({
       date,
