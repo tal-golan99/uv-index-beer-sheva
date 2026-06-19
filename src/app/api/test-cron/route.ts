@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       peakHour: peak ? parseInt(peak.time.slice(11, 13)) : null,
       peakUV: peak?.uv_index ?? null,
       funnyLine: `🧪 הודעת בדיקה | ${getMorningMessage(now)}`,
-      chartUrl: `${appUrl}/api/og/daily-uv`,
+      chartUrl: `${appUrl}/api/og/daily-uv?t=${Date.now()}`,
       inviteButtonUrl: appUrl,
     });
 
