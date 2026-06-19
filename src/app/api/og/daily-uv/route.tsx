@@ -12,7 +12,7 @@ function buildPath(pts: { x: number; y: number }[]): string {
     const p1 = pts[i - 1];
     const p2 = pts[i];
     const p3 = pts[i + 1] ?? pts[i];
-    // Catmull-Rom → cubic bezier (tension 0.5) for smooth natural curve
+    // Catmull-Rom → cubic bezier (tension 0.5)
     const cp1x = p1.x + (p2.x - p0.x) / 6;
     const cp1y = p1.y + (p2.y - p0.y) / 6;
     const cp2x = p2.x - (p3.x - p1.x) / 6;
@@ -25,17 +25,14 @@ function buildPath(pts: { x: number; y: number }[]): string {
 export async function GET() {
   const forecast = await fetchUVForecast();
 
-  // Scaled OM hourly (24pts, 1h resolution) → smooth bell curve.
-  // wttr.in is 3h-sampled (8pts) — too coarse.
   const allHours = forecast.omHoursToday.length > 0 ? forecast.omHoursToday : forecast.today.hours;
   const displayHours = allHours.filter((h) => {
     const hr = parseInt(h.time.slice(11, 13));
-    return hr >= 5 && hr <= 20;
+    return hr >= 6 && hr <= 20;
   });
-
   const detectionHours = allHours.filter((h) => {
     const hr = parseInt(h.time.slice(11, 13));
-    return hr >= 7 && hr <= 18;
+    return hr >= 8 && hr <= 17;
   });
 
   const peak = displayHours.length
@@ -47,16 +44,24 @@ export async function GET() {
   const poolTo    = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;
 
   const now = new Date();
-  const dateDisplay = now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Jerusalem" });
+  const dateDisplay = now.toLocaleDateString("en-US", {
+    weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Jerusalem",
+  });
 
-  const W = 800, H = 400;
-  const PL = 36, PR = 20, PT = 20, PB = 36;
-  const CW = W - PL - PR;
-  const CH = H - 80 - PT - PB; // 80px reserved for header+footer
+  // Chart dimensions
+  const W = 800, H = 420;
+  const LABEL_W = 28;  // Y-axis label column width
+  const LABEL_H = 20;  // X-axis label row height
+  const chartW = W - 48 - LABEL_W; // total img width minus padding minus Y labels
+  const chartH = H - 80 - LABEL_H; // total height minus header/footer minus X labels
+  const PT = 12, PB = 8;           // inner SVG padding top/bottom (no room needed for text)
+  const PL = 8, PR = 8;            // inner SVG padding left/right
 
-  const Y_MAX = 12;
+  const CW = chartW - PL - PR;
+  const CH = chartH - PT - PB;
+  const Y_MAX = 13;
+
   const n = displayHours.length;
-
   const pts = displayHours.map((h, i) => ({
     x: PL + (n > 1 ? (i / (n - 1)) : 0) * CW,
     y: PT + CH - Math.min(Math.max(h.uv_index / Y_MAX, 0), 1) * CH,
@@ -67,20 +72,11 @@ export async function GET() {
     ? `${linePath} L ${pts[pts.length - 1].x.toFixed(1)} ${(PT + CH).toFixed(1)} L ${pts[0].x.toFixed(1)} ${(PT + CH).toFixed(1)} Z`
     : "";
 
-  // Grid lines at UV 3, 6, 9, 12 — same as DailyChart Y ticks
+  // Grid lines only (no text — Satori doesn't render SVG text in data-URI imgs)
   const gridLines = [3, 6, 9, 12].map((v) => {
     const gy = PT + CH - (v / Y_MAX) * CH;
-    return `<line x1="${PL}" y1="${gy.toFixed(1)}" x2="${(PL + CW).toFixed(1)}" y2="${gy.toFixed(1)}" stroke="rgba(2,132,199,0.10)" stroke-width="1" stroke-dasharray="2 6"/>
-            <text x="${(PL - 6).toFixed(1)}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#5f7787" font-family="system-ui,sans-serif">${v}</text>`;
+    return `<line x1="${PL}" y1="${gy.toFixed(1)}" x2="${(PL + CW).toFixed(1)}" y2="${gy.toFixed(1)}" stroke="rgba(2,132,199,0.18)" stroke-width="1" stroke-dasharray="3 6"/>`;
   }).join("\n");
-
-  // X-axis labels — same as DailyChart (interval="preserveStartEnd" → show first and last + sparse)
-  const xLabels = displayHours
-    .map((h, i) => ({ hr: parseInt(h.time.slice(11, 13)), x: pts[i].x }))
-    .filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % 3 === 0)
-    .map(({ hr, x }) =>
-      `<text x="${x.toFixed(1)}" y="${(PT + CH + 20).toFixed(1)}" text-anchor="middle" font-size="10" fill="#5f7787" font-family="system-ui,sans-serif">${String(hr).padStart(2, "0")}:00</text>`
-    ).join("\n");
 
   // Peak dot
   const peakIdx = peak ? displayHours.findIndex((h) => h.time === peak.time) : -1;
@@ -88,7 +84,7 @@ export async function GET() {
     ? `<circle cx="${pts[peakIdx].x.toFixed(1)}" cy="${pts[peakIdx].y.toFixed(1)}" r="5" fill="#ef4444" stroke="white" stroke-width="2"/>`
     : "";
 
-  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${CH + PT + PB + 4}" viewBox="0 0 ${W} ${CH + PT + PB + 4}">
+  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${chartW}" height="${chartH}" viewBox="0 0 ${chartW} ${chartH}">
   <defs>
     <linearGradient id="uvStroke" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%"   stop-color="#a855f7"/>
@@ -107,25 +103,32 @@ export async function GET() {
       <stop offset="100%" stop-color="#22c55e" stop-opacity="0.04"/>
     </linearGradient>
   </defs>
-  <!-- white card background -->
-  <rect x="0" y="0" width="${W}" height="${CH + PT + PB + 4}" fill="white" rx="16"/>
+  <rect x="0" y="0" width="${chartW}" height="${chartH}" fill="white" rx="12"/>
   ${gridLines}
   ${fillPath ? `<path d="${fillPath}" fill="url(#uvFill)"/>` : ""}
   <path d="${linePath}" fill="none" stroke="url(#uvStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
   ${peakDot}
-  ${xLabels}
 </svg>`;
 
-  const poolText = poolFrom !== null && poolTo !== null
-    ? `${poolFrom}:00–${poolTo}:00 🏊`
-    : "";
+  // Y-axis label values and their pixel positions within the SVG
+  const yLabels = [12, 9, 6, 3].map((v) => ({
+    value: v,
+    pct: 1 - v / Y_MAX, // 0 = top, 1 = bottom
+  }));
+
+  // X-axis: show hours at ~3h intervals
+  const xLabels = displayHours
+    .map((h, i) => ({ hr: parseInt(h.time.slice(11, 13)), i }))
+    .filter(({ hr }) => hr % 3 === 0);
+
+  const poolText = poolFrom !== null && poolTo !== null ? `${poolFrom}:00–${poolTo}:00 🏊` : "";
   const peakText = peak
     ? `UV ${peak.uv_index.toFixed(0)} · ${parseInt(peak.time.slice(11, 13))}:00 peak ⚡`
     : "";
 
   return new ImageResponse(
     (
-      <div style={{ display: "flex", flexDirection: "column", width: W, height: H, background: "#f0f7fc", fontFamily: "system-ui,sans-serif", padding: "20px 24px 16px 24px", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", width: W, height: H, background: "#f0f7fc", fontFamily: "system-ui,sans-serif", padding: "20px 24px 16px 24px", gap: 10 }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -133,16 +136,52 @@ export async function GET() {
           <span style={{ fontSize: 15, color: "#4a6a80" }}>{dateDisplay}</span>
         </div>
 
-        {/* Chart card */}
-        <div style={{ display: "flex", flex: 1 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            width={W - 48}
-            height={CH + PT + PB + 4}
-            alt=""
-            src={`data:image/svg+xml,${encodeURIComponent(svgContent)}`}
-            style={{ borderRadius: 16, boxShadow: "0 1px 6px rgba(2,132,199,0.10)" }}
-          />
+        {/* Chart + labels */}
+        <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+
+          {/* Row: Y-labels + SVG chart */}
+          <div style={{ display: "flex", flex: 1 }}>
+
+            {/* Y-axis labels */}
+            <div style={{ display: "flex", flexDirection: "column", width: LABEL_W, alignItems: "flex-end", paddingRight: 4, paddingTop: PT, paddingBottom: PB, justifyContent: "space-between" }}>
+              {yLabels.map(({ value }) => (
+                <span key={value} style={{ fontSize: 11, color: "#5f7787", lineHeight: "1" }}>{value}</span>
+              ))}
+            </div>
+
+            {/* SVG chart (no text — labels are in JSX) */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              width={chartW}
+              height={chartH}
+              alt=""
+              src={`data:image/svg+xml,${encodeURIComponent(svgContent)}`}
+              style={{ borderRadius: 12, boxShadow: "0 1px 6px rgba(2,132,199,0.10)", flex: 1 }}
+            />
+          </div>
+
+          {/* X-axis labels */}
+          <div style={{ display: "flex", paddingLeft: LABEL_W, height: LABEL_H, position: "relative" }}>
+            {xLabels.map(({ hr, i }) => {
+              const pct = n > 1 ? i / (n - 1) : 0;
+              return (
+                <span
+                  key={hr}
+                  style={{
+                    position: "absolute",
+                    left: `${(PL / chartW + pct * (CW / chartW)) * 100}%`,
+                    fontSize: 10,
+                    color: "#5f7787",
+                    transform: "translateX(-50%)",
+                    top: 4,
+                  }}
+                >
+                  {String(hr).padStart(2, "0")}:00
+                </span>
+              );
+            })}
+          </div>
+
         </div>
 
         {/* Footer */}
