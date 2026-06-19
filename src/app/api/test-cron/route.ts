@@ -49,18 +49,25 @@ export async function GET(req: NextRequest) {
         ? `https://${vercelUrl}`
         : "https://uv-index-seven.vercel.app";
 
-    // Debug: call Telegram directly and return raw response
-    const chatId = chatIds[0];
-    const caption = `☀️ בדיקה\n🏊 ${poolFrom}:00–${poolTo}:00\n⚡ UV ${peak?.uv_index}`;
-    const photoUrl = `${appUrl}/api/og/daily-uv`;
+    await notifyMorningForecast(chatIds, {
+      poolFrom,
+      poolTo,
+      peakHour: peak ? parseInt(peak.time.slice(11, 13)) : null,
+      peakUV: peak?.uv_index ?? null,
+      funnyLine: `🧪 הודעת בדיקה | ${getMorningMessage(now)}`,
+      chartUrl: `${appUrl}/api/og/daily-uv`,
+      inviteButtonUrl: appUrl,
+    });
 
-    const tgRes = await fetch(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, photo: photoUrl, caption }) }
-    );
-    const tgData = await tgRes.json();
+    const wcMsg = await buildWCMessage();
+    if (wcMsg) await broadcastText(chatIds, wcMsg);
 
-    return NextResponse.json({ ok: tgRes.ok, telegram: tgData, appUrl, photoUrl, chatId });
+    return NextResponse.json({
+      ok: true,
+      sentTo: chatIds,
+      poolWindow: poolFrom !== null && poolTo !== null ? `${poolFrom}:00–${poolTo}:00` : null,
+      wcIncluded: !!wcMsg,
+    });
   } catch (err) {
     console.error("Test error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
