@@ -1,5 +1,6 @@
 const FD_BASE = "https://api.football-data.org/v4";
 const SM_BASE = "https://api.smarkets.com/v3";
+const OA_BASE = "https://api.the-odds-api.com/v4";
 
 const TEAM_FLAGS: Record<string, string> = {
   Argentina: "🇦🇷", Brazil: "🇧🇷", France: "🇫🇷", Germany: "🇩🇪",
@@ -22,7 +23,88 @@ const TEAM_FLAGS: Record<string, string> = {
   Zimbabwe: "🇿🇼", Guinea: "🇬🇳", "Cabo Verde": "🇨🇻",
   "Czech Republic": "🇨🇿", Slovakia: "🇸🇰", Hungary: "🇭🇺",
   Slovenia: "🇸🇮", Albania: "🇦🇱", Greece: "🇬🇷", Israel: "🇮🇱",
+  Haiti: "🇭🇹",
 };
+
+const TEAM_NAMES_HE: Record<string, string> = {
+  Argentina: "ארגנטינה",
+  Brazil: "ברזיל",
+  France: "צרפת",
+  Germany: "גרמניה",
+  Spain: "ספרד",
+  England: "אנגליה",
+  Portugal: "פורטוגל",
+  Netherlands: "הולנד",
+  Belgium: "בלגיה",
+  Croatia: "קרואטיה",
+  Uruguay: "אורוגוואי",
+  Colombia: "קולומביה",
+  Ecuador: "אקוואדור",
+  Mexico: "מקסיקו",
+  "United States": 'ארה"ב',
+  USA: 'ארה"ב',
+  Canada: "קנדה",
+  Morocco: "מרוקו",
+  Senegal: "סנגל",
+  Nigeria: "ניגריה",
+  Cameroon: "קמרון",
+  Egypt: "מצרים",
+  Ghana: "גאנה",
+  Algeria: "אלג'יריה",
+  Tunisia: "תוניסיה",
+  "Ivory Coast": "חוף השנהב",
+  "Côte d'Ivoire": "חוף השנהב",
+  Japan: "יפן",
+  "South Korea": "קוריאה ד.",
+  "Korea Republic": "קוריאה ד.",
+  Australia: "אוסטרליה",
+  Iran: "איראן",
+  "Saudi Arabia": "ערב הסעודית",
+  Qatar: "קטאר",
+  Turkey: "טורקיה",
+  Poland: "פולין",
+  Serbia: "סרביה",
+  Switzerland: "שוויץ",
+  Denmark: "דנמרק",
+  Sweden: "שוודיה",
+  Austria: "אוסטריה",
+  Ukraine: "אוקראינה",
+  Romania: "רומניה",
+  Wales: "וויילס",
+  Scotland: "סקוטלנד",
+  Norway: "נורווגיה",
+  Paraguay: "פרגוואי",
+  Chile: "צ'ילה",
+  Bolivia: "בוליביה",
+  Venezuela: "ונצואלה",
+  Peru: "פרו",
+  "New Zealand": "ניו זילנד",
+  Panama: "פנמה",
+  "Costa Rica": "קוסטה ריקה",
+  Honduras: "הונדורס",
+  Jamaica: "ג'מייקה",
+  "El Salvador": "אל סלבדור",
+  Uzbekistan: "אוזבקיסטן",
+  Indonesia: "אינדונזיה",
+  China: "סין",
+  "China PR": "סין",
+  Mali: "מאלי",
+  Tanzania: "טנזניה",
+  "DR Congo": "קונגו",
+  Zambia: "זמביה",
+  "Czech Republic": "צ'כיה",
+  Slovakia: "סלובקיה",
+  Hungary: "הונגריה",
+  Slovenia: "סלובניה",
+  Albania: "אלבניה",
+  Greece: "יוון",
+  Israel: "ישראל",
+  Haiti: "האיטי",
+};
+
+function hebrewName(name: string): string {
+  return TEAM_NAMES_HE[name] ?? name;
+}
 
 interface FDTeam { name: string; shortName: string }
 interface FDMatch {
@@ -116,7 +198,6 @@ async function fetchCorrectScore(
   const from = new Date(utc.getTime() - 60 * 60 * 1000).toISOString();
   const to = new Date(utc.getTime() + 60 * 60 * 1000).toISOString();
 
-  // Step 1: Find the Smarkets event matching this fixture
   const eventsData = await smGet<{ events: SmEvent[] }>(
     `/events/?type_names=football_match&start_datetime_min=${encodeURIComponent(from)}&start_datetime_max=${encodeURIComponent(to)}&limit=50`
   );
@@ -125,7 +206,6 @@ async function fetchCorrectScore(
   );
   if (!event) return null;
 
-  // Step 2: Find the correct score market for this event
   const marketsData = await smGet<{ markets: SmMarket[] }>(
     `/markets/?event_ids=${event.id}`
   );
@@ -134,7 +214,6 @@ async function fetchCorrectScore(
   );
   if (!market) return null;
 
-  // Step 3: Get contracts (score options) and best back prices in parallel
   type QuotesResponse = {
     quotes: Record<string, { bids?: { price: number; quantity: number }[] }>
   };
@@ -144,7 +223,6 @@ async function fetchCorrectScore(
   ]);
   if (!contractsData?.contracts?.length || !quotesData?.quotes) return null;
 
-  // Score names are like "1-0", "2-1", "0-0" — filter out "Any Other" variants
   const scorePattern = /^\d+\s*[–\-]\s*\d+$/;
   const candidates: { name: string; price: number }[] = [];
   let totalPrice = 0;
@@ -160,12 +238,63 @@ async function fetchCorrectScore(
 
   if (!candidates.length || totalPrice === 0) return null;
 
-  // Highest price = most likely; normalize across all candidates to get probability
   const best = candidates.reduce((a, b) => (a.price > b.price ? a : b));
   return {
     score: best.name.replace(/\s*[–\-]\s*/, "–"),
     probability: Math.round((best.price / totalPrice) * 100),
   };
+}
+
+// ── TheOddsAPI — win/draw/loss probabilities ───────────────────────────────
+
+interface OddsGame {
+  home_team: string;
+  away_team: string;
+  bookmakers: {
+    markets: {
+      key: string;
+      outcomes: { name: string; price: number }[];
+    }[];
+  }[];
+}
+
+async function fetchWinDrawLoss(
+  match: FDMatch,
+  from: string,
+  to: string
+): Promise<{ homeWin: number; draw: number; awayWin: number } | null> {
+  const key = process.env.THE_ODDS_API_KEY;
+  if (!key) return null;
+  try {
+    const url = `${OA_BASE}/sports/soccer_fifa_world_cup_2026/odds/?apiKey=${key}&regions=eu&markets=h2h&dateFrom=${encodeURIComponent(from)}&dateTo=${encodeURIComponent(to)}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    const games: OddsGame[] = await res.json();
+
+    const game = games.find((g) =>
+      teamsMatchEvent(`${g.home_team} ${g.away_team}`, match.homeTeam.name, match.awayTeam.name)
+    );
+    if (!game) return null;
+
+    const outcomes = game.bookmakers
+      .flatMap((b) => b.markets)
+      .find((m) => m.key === "h2h")?.outcomes;
+    if (!outcomes || outcomes.length < 2) return null;
+
+    const probs = outcomes.map((o) => ({ name: o.name, p: 1 / o.price }));
+    const total = probs.reduce((s, o) => s + o.p, 0);
+
+    const normPct = (name: string) =>
+      Math.round((probs.find((o) => o.name === name)?.p ?? 0) / total * 100);
+
+    const homeWin = normPct(game.home_team);
+    const awayWin = normPct(game.away_team);
+    const draw = 100 - homeWin - awayWin;
+
+    return { homeWin, draw: Math.max(0, draw), awayWin };
+  } catch {
+    return null;
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -230,8 +359,10 @@ export async function buildWCMessage(): Promise<string | null> {
     for (const m of results) {
       const hs = m.score.fullTime.home;
       const as_ = m.score.fullTime.away;
+      const heH = hebrewName(m.homeTeam.name);
+      const heA = hebrewName(m.awayTeam.name);
       lines.push(
-        `${flag(m.homeTeam.name)} ${m.homeTeam.shortName} ${hs}–${as_} ${m.awayTeam.shortName} ${flag(m.awayTeam.name)}  |  ${timeStr(m.utcDate)}`
+        `${flag(m.homeTeam.name)} ${heH} ${hs}–${as_} ${heA} ${flag(m.awayTeam.name)}  |  ${timeStr(m.utcDate)}`
       );
     }
   }
@@ -240,29 +371,39 @@ export async function buildWCMessage(): Promise<string | null> {
     lines.push("", "🔮 משחקים הקרובים:");
 
     for (const m of upcoming) {
+      const heH = hebrewName(m.homeTeam.name);
+      const heA = hebrewName(m.awayTeam.name);
+
       lines.push(
         "",
-        `${flag(m.homeTeam.name)} ${m.homeTeam.shortName} vs ${m.awayTeam.shortName} ${flag(m.awayTeam.name)}  |  ${timeStr(m.utcDate)}`
+        `${flag(m.homeTeam.name)} ${heH} vs ${heA} ${flag(m.awayTeam.name)}  |  ${timeStr(m.utcDate)}`
       );
 
       const hS = standingMap.get(m.homeTeam.name);
       const aS = standingMap.get(m.awayTeam.name);
-      const parts: string[] = [];
+
       if (hS && hS.playedGames > 0) {
         const f = hS.form ? ` (${formatForm(hS.form)})` : "";
-        parts.push(
-          `${m.homeTeam.shortName} מקום ${hS.position} בקבוצה — ${hS.points} נקודות, ${hS.goalsFor}:${hS.goalsAgainst} שערים${f}.`
+        lines.push(
+          `${flag(m.homeTeam.name)} ${heH}: מקום ${hS.position} — ${hS.points} נקודות, ${hS.goalsFor}:${hS.goalsAgainst} שערים${f}`
         );
       }
       if (aS && aS.playedGames > 0) {
         const f = aS.form ? ` (${formatForm(aS.form)})` : "";
-        parts.push(
-          `${m.awayTeam.shortName} מקום ${aS.position} — ${aS.points} נקודות, ${aS.goalsFor}:${aS.goalsAgainst} שערים${f}.`
+        lines.push(
+          `${flag(m.awayTeam.name)} ${heA}: מקום ${aS.position} — ${aS.points} נקודות, ${aS.goalsFor}:${aS.goalsAgainst} שערים${f}`
         );
       }
-      if (parts.length) lines.push(parts.join(" "));
 
-      // Exact score probability from Smarkets (no auth needed; skipped silently if unavailable)
+      // Win/draw/loss from TheOddsAPI (2h window around kickoff)
+      const matchFrom = new Date(new Date(m.utcDate).getTime() - 2 * 60 * 60 * 1000).toISOString();
+      const matchTo = new Date(new Date(m.utcDate).getTime() + 2 * 60 * 60 * 1000).toISOString();
+      const wdl = await fetchWinDrawLoss(m, matchFrom, matchTo);
+      if (wdl) {
+        lines.push(`→ ניצחון ${heH} ${wdl.homeWin}% | תיקו ${wdl.draw}% | ניצחון ${heA} ${wdl.awayWin}%`);
+      }
+
+      // Exact score probability from Smarkets (silently skipped if unavailable)
       const odds = await fetchCorrectScore(m);
       if (odds) {
         lines.push(`→ תוצאה סבירה ביותר: ${odds.score} | ${odds.probability}%`);
