@@ -71,7 +71,7 @@ export async function notifyMorningForecast(
   }
 ): Promise<void> {
   const poolLine = opts.poolFrom !== null && opts.poolTo !== null
-    ? `🏊 זמן בריכה: ${opts.poolFrom}:00–${opts.poolTo}:00 (UV ≥ 9)`
+    ? `🏊 זמן בריכה: ${opts.poolFrom}:00–${opts.poolTo}:00`
     : "";
 
   const peakLine = opts.peakHour !== null && opts.peakUV !== null
