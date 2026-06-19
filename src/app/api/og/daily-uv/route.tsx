@@ -17,17 +17,15 @@ function buildPath(pts: { x: number; y: number }[]): string {
 export async function GET() {
   const forecast = await fetchUVForecast();
 
-  // Same data source as DailyChart on the website (calibrated wttr.in)
-  const displayHours = forecast.today.hours.filter((h) => {
+  // Scaled OM hourly (24pts, 1h resolution) → smooth bell curve.
+  // wttr.in is 3h-sampled (8pts) — too coarse.
+  const allHours = forecast.omHoursToday.length > 0 ? forecast.omHoursToday : forecast.today.hours;
+  const displayHours = allHours.filter((h) => {
     const hr = parseInt(h.time.slice(11, 13));
-    return hr >= 0 && hr <= 23;
+    return hr >= 5 && hr <= 20;
   });
 
-  // OM hourly data for pool window detection (1h precision)
-  const detectionHours = (forecast.omHoursToday.length > 0
-    ? forecast.omHoursToday
-    : forecast.today.hours
-  ).filter((h) => {
+  const detectionHours = allHours.filter((h) => {
     const hr = parseInt(h.time.slice(11, 13));
     return hr >= 7 && hr <= 18;
   });
@@ -41,9 +39,7 @@ export async function GET() {
   const poolTo    = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;
 
   const now = new Date();
-  const dayName = now.toLocaleDateString("he-IL", { weekday: "long", timeZone: "Asia/Jerusalem" });
-  const dateNum  = now.toLocaleDateString("he-IL", { day: "numeric", month: "long", timeZone: "Asia/Jerusalem" });
-  const dateDisplay = `${dateNum} ,${dayName}`;
+  const dateDisplay = now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Jerusalem" });
 
   const W = 800, H = 400;
   const PL = 36, PR = 20, PT = 20, PB = 36;
@@ -113,10 +109,10 @@ export async function GET() {
 </svg>`;
 
   const poolText = poolFrom !== null && poolTo !== null
-    ? `${poolFrom}:00–${poolTo}:00 (UV ≥ 9) 🏊`
+    ? `${poolFrom}:00–${poolTo}:00 🏊`
     : "";
   const peakText = peak
-    ? `UV ${peak.uv_index.toFixed(0)} · ${parseInt(peak.time.slice(11, 13))}:00 שיא ⚡`
+    ? `UV ${peak.uv_index.toFixed(0)} · ${parseInt(peak.time.slice(11, 13))}:00 peak ⚡`
     : "";
 
   return new ImageResponse(

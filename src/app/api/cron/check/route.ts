@@ -7,7 +7,8 @@ import {
   getPendingAlerts,
   markAlertSent,
 } from "@/lib/supabase";
-import { notifySubscribers, notifyMorningForecast } from "@/lib/notifications";
+import { notifySubscribers, notifyMorningForecast, broadcastText } from "@/lib/notifications";
+import { buildWCMessage } from "@/lib/worldcup";
 import { getMorningMessage } from "@/lib/morning-messages";
 
 function getAdmin() {
@@ -115,8 +116,10 @@ async function seedTodayAlert(date: string, now: Date) {
   const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;
   const peak     = chartHours.reduce((a, b) => (a.uv_index >= b.uv_index ? a : b), chartHours[0]);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const appUrl = rawAppUrl.startsWith("https://")
+    ? rawAppUrl
+    : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
   await notifyMorningForecast(chatIds, {
     poolFrom,
     poolTo,
@@ -126,6 +129,9 @@ async function seedTodayAlert(date: string, now: Date) {
     chartUrl: `${appUrl}/api/og/daily-uv`,
     inviteButtonUrl: appUrl,
   });
+
+  const wcMsg = await buildWCMessage();
+  if (wcMsg) await broadcastText(chatIds, wcMsg);
 }
 
 async function autoCheckoutIfLowUV() {
