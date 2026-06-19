@@ -155,6 +155,7 @@ async function dispatchPendingAlerts(now: Date) {
         type: "warn",
         uvValue: alert.max_uv,
         alertTime: alert.warn_at,
+        thresholdTime: alert.threshold_at,
       });
       await markAlertSent(alert.id, "warn_sent");
     }

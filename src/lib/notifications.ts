@@ -4,6 +4,7 @@ interface AlertPayload {
   type: "warn" | "threshold";
   uvValue: number;
   alertTime: string;
+  thresholdTime?: string;
 }
 
 export async function notifySubscribers(
@@ -22,7 +23,10 @@ async function notifyOne(sub: Subscriber, payload: AlertPayload) {
 }
 
 function buildMessage(payload: AlertPayload): string {
-  const time = new Date(payload.alertTime).toLocaleTimeString("he-IL", {
+  const displayTime = payload.type === "warn" && payload.thresholdTime
+    ? payload.thresholdTime
+    : payload.alertTime;
+  const time = new Date(displayTime).toLocaleTimeString("he-IL", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Asia/Jerusalem",
@@ -83,11 +87,9 @@ export async function notifyMorningForecast(
     opts.funnyLine,
   ].filter(Boolean).join("\n");
 
-  const inlineKeyboard = {
-    inline_keyboard: [[
-      { text: "זמן חברים לבריכה 📅", url: opts.inviteButtonUrl },
-    ]],
-  };
+  const inlineKeyboard = opts.inviteButtonUrl
+    ? { inline_keyboard: [[{ text: "זמן חברים לבריכה 📅", url: opts.inviteButtonUrl }]] }
+    : undefined;
 
   await Promise.allSettled(
     chatIds.map((id) => sendTelegramPhoto(id, opts.chartUrl, caption, inlineKeyboard))
