@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
     const appUrl = rawAppUrl.startsWith("https://")
       ? rawAppUrl
-      : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+      : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.trim()}` : "");
 
     // Debug: call Telegram directly and return raw response
     const chatId = chatIds[0];
