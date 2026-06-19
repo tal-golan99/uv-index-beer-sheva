@@ -214,7 +214,7 @@ export default function OnboardingPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
-                  style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                  style={{ background: "linear-gradient(90deg, var(--color-telegram), var(--color-telegram-dark))" }}
                 >
                   <TelegramIcon />
                   פתח בטלגרם
@@ -225,7 +225,7 @@ export default function OnboardingPage() {
                   disabled
                   aria-disabled="true"
                   className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-extrabold text-white opacity-50"
-                  style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                  style={{ background: "linear-gradient(90deg, var(--color-telegram), var(--color-telegram-dark))" }}
                 >
                   <TelegramIcon />
                   {error ? "נכשל ביצירת לינק" : "מכין לינק..."}
@@ -277,6 +277,7 @@ export default function OnboardingPage() {
           <div className="flex flex-col items-center gap-4">
             <button
               onClick={() => fileInputRef.current?.click()}
+              aria-label="העלה תמונת פרופיל"
               className="relative h-24 w-24 overflow-hidden rounded-full ring-4 ring-[color:var(--color-pool-200)] ring-offset-2 transition-transform hover:scale-105 active:scale-95"
             >
               {avatarPreview || googleAvatar ? (

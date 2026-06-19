@@ -182,7 +182,7 @@ export default function GroupsPage() {
 
         {/* Create group card */}
         <div className="rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-sm space-y-3">
-          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[color:var(--color-ink-3)]">קבוצה חדשה</h2>
+          <h2 className="text-sm font-extrabold text-[color:var(--color-ink-2)]">קבוצה חדשה</h2>
           <form onSubmit={createGroup} className="flex gap-2">
             <input
               type="text"
@@ -249,7 +249,7 @@ export default function GroupsPage() {
                       onClick={() => toggleNotifications(g.id, g.notifications_enabled)}
                       aria-label={g.notifications_enabled ? "כבה התראות לקבוצה" : "הפעל התראות לקבוצה"}
                       title={g.notifications_enabled ? "התראות פועלות — לחץ לכיבוי" : "התראות כבויות — לחץ להפעלה"}
-                      className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+                      className="shrink-0 flex h-11 w-11 items-center justify-center rounded-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
                       style={{
                         background: g.notifications_enabled
                           ? "linear-gradient(135deg, var(--color-pool-500), var(--color-pool-400))"
@@ -267,7 +267,7 @@ export default function GroupsPage() {
 
                   {/* Invite sharing */}
                   <div className="px-5 pb-4 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-ink-3)]">שתף לינק הצטרפות</p>
+                    <p className="text-xs font-semibold text-[color:var(--color-ink-2)]">שתף לינק הצטרפות</p>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -293,7 +293,7 @@ export default function GroupsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
-                        style={{ background: "linear-gradient(135deg, #229ED9, #1A7BBF)" }}
+                        style={{ background: "linear-gradient(135deg, var(--color-telegram), var(--color-telegram-dark))" }}
                       >
                         Telegram
                       </a>

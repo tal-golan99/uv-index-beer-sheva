@@ -47,7 +47,7 @@ function FeatureRow({
         }`}
       >
         <Image src={img} alt={alt} fill sizes="(min-width: 768px) 480px, 100vw" className="object-cover" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0369a1]/30 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[color:var(--color-pool-600)]/30 via-transparent to-transparent" />
       </div>
 
       <div className={flip ? "md:order-1" : ""}>
@@ -163,7 +163,7 @@ export default function LandingPage() {
                 sizes="(min-width: 768px) 960px, 100vw"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a5784]/85 via-[#0a5784]/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-pool-700)]/85 via-[color:var(--color-pool-700)]/35 to-transparent" />
             </div>
             <div className="absolute inset-x-0 bottom-0 p-6 text-right sm:p-10">
               <span

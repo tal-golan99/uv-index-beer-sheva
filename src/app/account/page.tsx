@@ -300,6 +300,9 @@ export default function AccountPage() {
             </div>
           </div>
 
+          {/* Integrations zone — visual break from profile fields above */}
+          <div className="night-divider pt-2" />
+
           {/* Telegram */}
           <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm">
             <div className="flex items-center justify-between">
@@ -335,7 +338,7 @@ export default function AccountPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
-                    style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                    style={{ background: "linear-gradient(90deg, var(--color-telegram), var(--color-telegram-dark))" }}
                   >
                     <TelegramIcon />
                     פתח בטלגרם
@@ -346,7 +349,7 @@ export default function AccountPage() {
                     disabled
                     aria-disabled="true"
                     className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white opacity-50"
-                    style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                    style={{ background: "linear-gradient(90deg, var(--color-telegram), var(--color-telegram-dark))" }}
                   >
                     <TelegramIcon />
                     מכין לינק...
@@ -359,7 +362,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={startTelegramSetup}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-white transition-transform hover:scale-[1.02] active:scale-95"
-                style={{ background: "linear-gradient(90deg, #229ED9, #1A7BBF)" }}
+                style={{ background: "linear-gradient(90deg, var(--color-telegram), var(--color-telegram-dark))" }}
               >
                 <TelegramIcon />
                 חבר טלגרם

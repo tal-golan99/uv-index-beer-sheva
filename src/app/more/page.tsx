@@ -94,7 +94,7 @@ export default function MorePage() {
               sizes="480px"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a5784]/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-pool-700)]/60 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-0 right-0 text-center">
               <span className="text-4xl font-black text-white" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
                 More UV ✨
@@ -118,74 +118,109 @@ export default function MorePage() {
           </div>
         </section>
 
-        {/* Pricing tiers — dir=ltr so cards flow Free→Bronze→Gold→Diamond left-to-right */}
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" dir="ltr">
-          {TIERS.map((tier) => (
-            <div
-              key={tier.name}
-              className="radius-card shadow-pool-md bg-white p-6 flex flex-col gap-4 ring-1 ring-[color:var(--color-pool-100)] relative"
-            >
-              {tier.soon && (
-                <div
-                  className="absolute -top-1 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white z-10"
-                  style={{ background: "linear-gradient(90deg, #f59e0b, #ef4444)" }}
-                >
+        {/* Pricing tiers — Gold is the featured tier: larger, drenched. Others step back. */}
+        <section className="space-y-4">
+          {/* Gold — featured, drenched, full-width hero */}
+          {(() => {
+            const gold = TIERS[2];
+            return (
+              <div
+                className="radius-card relative overflow-hidden p-8 text-white"
+                style={{ background: "linear-gradient(135deg, var(--color-pool-700) 0%, #b07d1a 100%)" }}
+              >
+                <div className="absolute top-4 left-4 rounded-full bg-white/20 px-3 py-1 text-xs font-extrabold text-white">
                   בקרוב
                 </div>
-              )}
-              <div className="text-center" dir="rtl">
-                <span className="text-4xl">{tier.emoji}</span>
-                <h2 className="mt-2 text-lg font-extrabold text-[color:var(--color-ink)]">{tier.name}</h2>
-                <div className="mt-1">
-                  <span className="text-3xl font-black" style={{ color: tier.color }}>{tier.price}</span>
-                  <span className="text-xs text-[color:var(--color-ink-3)]"> / {tier.period}</span>
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <div className="flex-1">
+                    <span className="text-3xl">{gold.emoji}</span>
+                    <h2 className="mt-1 text-2xl font-black text-white">{gold.name}</h2>
+                    <p className="mt-0.5 text-sm text-white/70">הטוב ביותר לשחיינים רציניים</p>
+                    <ul className="mt-4 space-y-1.5">
+                      {gold.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm text-white/90">
+                          <Lock size={13} color="rgba(255,255,255,0.7)" weight="bold" aria-hidden />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex flex-col items-center gap-3 sm:items-end">
+                    <div className="text-center sm:text-right">
+                      <p className="text-5xl font-black text-white">{gold.price}</p>
+                      <p className="text-sm text-white/60">/ {gold.period}</p>
+                    </div>
+                    <a
+                      href="#waitlist"
+                      className="rounded-2xl bg-white px-8 py-3 text-sm font-extrabold text-[color:var(--color-pool-700)] transition-opacity hover:opacity-90 active:opacity-80"
+                    >
+                      {gold.cta}
+                    </a>
+                  </div>
                 </div>
               </div>
+            );
+          })()}
 
-              <ul className="space-y-1.5 flex-1" dir="rtl">
-                {tier.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-xs text-[color:var(--color-ink-2)]">
-                    {tier.soon ? (
-                      <Lock size={12} color={tier.color} weight="bold" aria-hidden />
-                    ) : (
-                      <span className="text-green-500 text-xs">✓</span>
-                    )}
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              {tier.isCurrent ? (
-                <div
-                  className="w-full rounded-2xl py-3 text-sm font-extrabold text-center"
-                  style={{ background: `${tier.color}22`, color: tier.color }}
-                >
-                  {tier.cta}
+          {/* Free, Bronze, Diamond — three lighter columns */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[TIERS[0], TIERS[1], TIERS[3]].map((tier) => (
+              <div
+                key={tier.name}
+                className="radius-nested bg-white p-5 flex flex-col gap-3 ring-1 ring-[color:var(--color-pool-100)]"
+              >
+                <div>
+                  <span className="text-2xl">{tier.emoji}</span>
+                  <h2 className="mt-1 text-base font-extrabold text-[color:var(--color-ink)]">{tier.name}</h2>
+                  <div className="mt-0.5 flex items-baseline gap-1">
+                    <span className="text-xl font-black" style={{ color: tier.color }}>{tier.price}</span>
+                    <span className="text-xs text-[color:var(--color-ink-2)]">/ {tier.period}</span>
+                  </div>
                 </div>
-              ) : (
-                <a
-                  href="#waitlist"
-                  className="w-full rounded-2xl py-3 text-sm font-extrabold text-white text-center block transition-opacity hover:opacity-90 active:opacity-80"
-                  style={{ background: `linear-gradient(90deg, ${tier.color}, ${tier.color}99)` }}
-                >
-                  {tier.cta}
-                </a>
-              )}
-            </div>
-          ))}
-        </section>
-
-        {/* Coming features */}
-        <section className="surface-band px-6 py-10 text-center space-y-6">
-          <h2 className="display-title text-2xl text-[color:var(--color-ink)]">מה יגיע בקרוב</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 max-w-xl mx-auto">
-            {COMING_FEATURES.map((f) => (
-              <div key={f.label} className="flex flex-col items-center gap-2 rounded-2xl bg-white px-4 py-4 ring-1 ring-[color:var(--color-pool-100)]">
-                <span className="text-[color:var(--color-pool-600)]">{f.icon}</span>
-                <span className="text-xs font-semibold text-[color:var(--color-ink-2)] text-center">{f.label}</span>
+                <ul className="space-y-1 flex-1">
+                  {tier.features.map((f) => (
+                    <li key={f} className="flex items-center gap-1.5 text-xs text-[color:var(--color-ink-2)]">
+                      {tier.isCurrent ? (
+                        <span className="text-green-500">✓</span>
+                      ) : (
+                        <Lock size={11} color={tier.color} weight="bold" aria-hidden />
+                      )}
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                {tier.isCurrent ? (
+                  <div
+                    className="rounded-xl py-2 text-xs font-extrabold text-center"
+                    style={{ background: `${tier.color}22`, color: tier.color }}
+                  >
+                    {tier.cta}
+                  </div>
+                ) : (
+                  <a
+                    href="#waitlist"
+                    className="rounded-xl py-2 text-xs font-extrabold text-white text-center block transition-opacity hover:opacity-90 active:opacity-80"
+                    style={{ background: `linear-gradient(90deg, ${tier.color}, ${tier.color}99)` }}
+                  >
+                    {tier.cta}
+                  </a>
+                )}
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Coming features — list layout, no card repetition */}
+        <section className="surface-band px-6 py-10 space-y-6">
+          <h2 className="display-title text-2xl text-[color:var(--color-ink)] text-center">מה יגיע בקרוב</h2>
+          <ul className="mx-auto max-w-sm space-y-3">
+            {COMING_FEATURES.map((f) => (
+              <li key={f.label} className="flex items-center gap-3 text-sm text-[color:var(--color-ink-2)]">
+                <span className="shrink-0 text-[color:var(--color-pool-600)]">{f.icon}</span>
+                {f.label}
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* Waitlist CTA */}

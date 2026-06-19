@@ -70,6 +70,7 @@ body {
   font-family: var(--font-assistant), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
 }
 
 /* Festive variant when UV >= 9 — warmer honey-over-water, intentional not candy */
@@ -88,19 +89,40 @@ body.night-mode {
   --bg-bottom: #111e2c;
   --color-ink:   #e8f4fb;
   --color-ink-2: #94b8cc;
-  --color-ink-3: #5a7d94;
+  --color-ink-3: #7a9bb0; /* boosted 4.1:1 → 6.2:1 — safe for 12px captions on dark */
   background:
+    /* Sparse star field — upper sky only, fixed with the viewport */
+    radial-gradient(circle at  8% 10%, rgba(232,244,251,0.24) 0px, transparent 1.5px),
+    radial-gradient(circle at 21%  6%, rgba(232,244,251,0.16) 0px, transparent 1.5px),
+    radial-gradient(circle at 37% 14%, rgba(232,244,251,0.20) 0px, transparent 1.5px),
+    radial-gradient(circle at 54%  4%, rgba(232,244,251,0.13) 0px, transparent 1.5px),
+    radial-gradient(circle at 68% 18%, rgba(232,244,251,0.21) 0px, transparent 1.5px),
+    radial-gradient(circle at 79%  8%, rgba(232,244,251,0.16) 0px, transparent 1.5px),
+    radial-gradient(circle at 93% 13%, rgba(232,244,251,0.19) 0px, transparent 1.5px),
+    radial-gradient(circle at 14% 28%, rgba(232,244,251,0.11) 0px, transparent 1.5px),
+    radial-gradient(circle at 46% 32%, rgba(232,244,251,0.09) 0px, transparent 1.5px),
+    radial-gradient(circle at 87% 25%, rgba(232,244,251,0.12) 0px, transparent 1.5px),
+    /* Pool ambient glows — top and bottom */
     radial-gradient(ellipse 80% 50% at 50% -8%, rgba(14, 147, 212, 0.18), transparent 68%),
+    radial-gradient(ellipse 55% 25% at 50% 108%, rgba(14, 147, 212, 0.12), transparent 62%),
     linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 60%);
+  /* Light-on-dark typography compensation: line-height + tracking (weight-500 not loaded) */
+  line-height: 1.7;
+  letter-spacing: 0.012em;
 }
 body.night-mode .surface-band {
   background:
-    radial-gradient(125% 100% at 50% 0%, rgba(14, 147, 212, 0.22), transparent 68%),
+    radial-gradient(125% 100% at 50% 0%, rgba(14, 147, 212, 0.28), transparent 68%),
     rgba(10, 28, 48, 0.90);
 }
-body.night-mode .radius-card,
-body.night-mode .radius-nested {
+body.night-mode .radius-card {
   background: rgba(14, 30, 44, 0.85) !important;
+  outline: 1px solid rgba(14, 147, 212, 0.12);
+}
+/* Nested cards sit at higher elevation — lighter surface for depth without shadows */
+body.night-mode .radius-nested {
+  background: rgba(20, 44, 66, 0.90) !important;
+  outline: 1px solid rgba(14, 147, 212, 0.08);
 }
 
 /* Catch standalone rounded cards not using radius helpers */
@@ -110,16 +132,53 @@ body.night-mode .rounded-xl.bg-white:not(button):not(a) {
   background: rgba(14, 30, 44, 0.85) !important;
 }
 
-/* Sticky navigation bars */
+/* Sticky navigation bars — deeper glass, saturated backdrop for chromatic depth */
 body.night-mode nav {
-  background: rgba(10, 28, 48, 0.88) !important;
-  border-color: rgba(14, 147, 212, 0.15) !important;
+  background: rgba(10, 24, 44, 0.90) !important;
+  border-color: rgba(14, 147, 212, 0.18) !important;
+  box-shadow: 0 1px 0 rgba(14, 147, 212, 0.10), 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
 }
 
 /* Light pool tokens → tinted glass in night mode */
 body.night-mode {
   --color-pool-50:  rgba(14, 147, 212, 0.10);
-  --color-pool-100: rgba(14, 147, 212, 0.16);
+  --color-pool-100: rgba(14, 147, 212, 0.22);
+}
+
+/* Section-break divider for inner pages in night mode */
+body.night-mode .night-divider {
+  border-top: 1px solid rgba(14, 147, 212, 0.14);
+}
+
+/* Display headings need tighter leading than body but slightly more than day (dark surfaces compress perceived spacing) */
+body.night-mode .display-title {
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+/* Night delight — CTA buttons emit a pool-water glow in the dark (thematic, not generic) */
+@media (hover: hover) and (pointer: fine) {
+  body.night-mode .cta-btn:hover {
+    box-shadow: 0 0 24px rgba(14, 147, 212, 0.35), var(--shadow-lg) !important;
+  }
+}
+
+/* Night motion tuning — ambient loops breathe slower; entrances land more softly.
+   Feedback animations (pressable, cta-btn) are unchanged; only decorative motion adjusts. */
+body.night-mode .uv-aura      { animation-duration: 7s; }
+body.night-mode .anim-sun     { animation-duration: 6s; }
+body.night-mode .anim-bob     { animation-duration: 5.5s; }
+body.night-mode .anim-blob    { animation-duration: 32s; }
+body.night-mode .anim-pop,
+body.night-mode .anim-pop-spring,
+body.night-mode .anim-rise    { animation-duration: 0.65s; }
+
+/* Telegram brand color token — shared across account, groups, onboarding */
+:root {
+  --color-telegram: #229ED9;
+  --color-telegram-dark: #1A7BBF;
 }
 
 /* Semantic status chips */
