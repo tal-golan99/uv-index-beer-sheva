@@ -240,22 +240,27 @@ async function fetchWinDrawLoss(
   to: string
 ): Promise<{ homeWin: number; draw: number; awayWin: number } | null> {
   const key = process.env.THE_ODDS_API_KEY;
-  if (!key) return null;
+  if (!key) { console.log("[WDL] no THE_ODDS_API_KEY"); return null; }
   try {
     const url = `${OA_BASE}/sports/soccer_fifa_world_cup_2026/odds/?apiKey=${key}&regions=eu&markets=h2h&dateFrom=${encodeURIComponent(from)}&dateTo=${encodeURIComponent(to)}`;
     const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.log(`[WDL] HTTP ${res.status}: ${body.slice(0, 200)}`);
+      return null;
+    }
     const games: OddsGame[] = await res.json();
+    console.log(`[WDL] ${match.homeTeam.name} vs ${match.awayTeam.name}: API returned ${games.length} games, teams=[${games.map(g => `${g.home_team}|${g.away_team}`).join(", ")}]`);
 
     const game = games.find((g) =>
       teamsMatchEvent(`${g.home_team} ${g.away_team}`, match.homeTeam.name, match.awayTeam.name)
     );
-    if (!game) return null;
+    if (!game) { console.log(`[WDL] no match found for ${match.homeTeam.name} vs ${match.awayTeam.name}`); return null; }
 
     const outcomes = game.bookmakers
       .flatMap((b) => b.markets)
       .find((m) => m.key === "h2h")?.outcomes;
-    if (!outcomes || outcomes.length < 2) return null;
+    if (!outcomes || outcomes.length < 2) { console.log("[WDL] no h2h outcomes"); return null; }
 
     const probs = outcomes.map((o) => ({ name: o.name, p: 1 / o.price }));
     const total = probs.reduce((s, o) => s + o.p, 0);
@@ -268,7 +273,8 @@ async function fetchWinDrawLoss(
     const draw = 100 - homeWin - awayWin;
 
     return { homeWin, draw: Math.max(0, draw), awayWin };
-  } catch {
+  } catch (e) {
+    console.log(`[WDL] exception: ${e}`);
     return null;
   }
 }
