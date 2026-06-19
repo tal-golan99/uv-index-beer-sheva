@@ -114,18 +114,6 @@ interface FDMatch {
   score: { fullTime: { home: number | null; away: number | null } };
   status: string;
 }
-interface FDStandingEntry {
-  position: number;
-  team: { name: string; shortName: string };
-  playedGames: number;
-  won: number;
-  draw: number;
-  lost: number;
-  points: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  form: string | null;
-}
 
 // ── football-data.org ──────────────────────────────────────────────────────
 
@@ -151,18 +139,6 @@ async function fetchMatches(from: string, to: string, status: string): Promise<F
   return data?.matches ?? [];
 }
 
-async function fetchStandingMap(): Promise<Map<string, FDStandingEntry & { group: string }>> {
-  const data = await fdFetch("/competitions/WC/standings") as {
-    standings?: { group: string; table: FDStandingEntry[] }[]
-  } | null;
-  const map = new Map<string, FDStandingEntry & { group: string }>();
-  for (const group of data?.standings ?? []) {
-    for (const entry of group.table) {
-      map.set(entry.team.name, { ...entry, group: group.group });
-    }
-  }
-  return map;
-}
 
 // ── Smarkets Exchange (public read API, no auth required) ──────────────────
 
@@ -316,11 +292,6 @@ function flag(name: string): string {
   return TEAM_FLAGS[name] ?? "⚽";
 }
 
-function formatForm(form: string | null): string {
-  if (!form) return "";
-  const labels: Record<string, string> = { W: "נ", D: "ת", L: "ה" };
-  return form.split(",").map((c) => labels[c] ?? c).join("");
-}
 
 // ── Main export ────────────────────────────────────────────────────────────
 
@@ -332,10 +303,9 @@ export async function buildWCMessage(): Promise<string | null> {
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const nowMs = now.getTime();
 
-  const [recentRaw, upcomingRaw, standingMap] = await Promise.all([
+  const [recentRaw, upcomingRaw] = await Promise.all([
     fetchMatches(dateStr(yesterday), dateStr(now), "FINISHED"),
     fetchMatches(dateStr(now), dateStr(tomorrow), "SCHEDULED"),
-    fetchStandingMap(),
   ]);
 
   const results = recentRaw.filter((m) => {
@@ -378,22 +348,6 @@ export async function buildWCMessage(): Promise<string | null> {
         "",
         `${flag(m.homeTeam.name)} ${heH} vs ${heA} ${flag(m.awayTeam.name)}  |  ${timeStr(m.utcDate)}`
       );
-
-      const hS = standingMap.get(m.homeTeam.name);
-      const aS = standingMap.get(m.awayTeam.name);
-
-      if (hS && hS.playedGames > 0) {
-        const f = hS.form ? ` (${formatForm(hS.form)})` : "";
-        lines.push(
-          `${flag(m.homeTeam.name)} ${heH}: מקום ${hS.position} — ${hS.points} נקודות, ${hS.goalsFor}:${hS.goalsAgainst} שערים${f}`
-        );
-      }
-      if (aS && aS.playedGames > 0) {
-        const f = aS.form ? ` (${formatForm(aS.form)})` : "";
-        lines.push(
-          `${flag(m.awayTeam.name)} ${heA}: מקום ${aS.position} — ${aS.points} נקודות, ${aS.goalsFor}:${aS.goalsAgainst} שערים${f}`
-        );
-      }
 
       // Win/draw/loss from TheOddsAPI (2h window around kickoff)
       const matchFrom = new Date(new Date(m.utcDate).getTime() - 2 * 60 * 60 * 1000).toISOString();
