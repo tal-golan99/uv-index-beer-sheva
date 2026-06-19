@@ -116,10 +116,13 @@ async function seedTodayAlert(date: string, now: Date) {
   const poolTo   = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;
   const peak     = chartHours.reduce((a, b) => (a.uv_index >= b.uv_index ? a : b), chartHours[0]);
 
-  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const rawAppUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
+  const vercelUrl = (process.env.VERCEL_URL ?? "").trim();
   const appUrl = rawAppUrl.startsWith("https://")
     ? rawAppUrl
-    : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.trim()}` : "");
+    : vercelUrl
+      ? `https://${vercelUrl}`
+      : "https://uv-index-seven.vercel.app";
   await notifyMorningForecast(chatIds, {
     poolFrom,
     poolTo,
