@@ -39,7 +39,7 @@ export async function GET() {
     ? displayHours.reduce((a, b) => (a.uv_index >= b.uv_index ? a : b))
     : null;
 
-  const poolHours = detectionHours.filter((h) => h.uv_index >= 9);
+  const poolHours = detectionHours.filter((h) => h.uv_index >= 8);
   const poolFrom  = poolHours[0]     ? parseInt(poolHours[0].time.slice(11, 13))          : null;
   const poolTo    = poolHours.at(-1) ? parseInt(poolHours.at(-1)!.time.slice(11, 13)) + 1 : null;
 
