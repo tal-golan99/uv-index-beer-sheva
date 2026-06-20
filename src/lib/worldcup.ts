@@ -238,7 +238,8 @@ async function fetchWinDrawLoss(
   match: FDMatch
 ): Promise<{ homeWin: number; draw: number; awayWin: number } | null> {
   const key = process.env.THE_ODDS_API_KEY;
-  if (!key) { console.log("[WDL] no THE_ODDS_API_KEY"); return null; }
+  console.log(`[WDL] key check: ${key ? `SET len=${key.length} first4=${key.slice(0,4)}` : "MISSING"}`);
+  if (!key) return null;
   try {
     const url = `${OA_BASE}/sports/soccer_fifa_world_cup/odds/?apiKey=${key}&regions=eu&markets=h2h`;
     const res = await fetch(url, { cache: "no-store" });
