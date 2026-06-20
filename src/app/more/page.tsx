@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Sun, Lock, ChartBar, UsersThree, Star, Lightning, Crown, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { Lock, ChartBar, UsersThree, Star, Lightning, Crown, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import Wordmark from "@/components/Wordmark";
 import MoreUVWaitlist from "@/components/MoreUVWaitlist";
 
@@ -102,7 +102,6 @@ export default function MorePage() {
             </div>
           </div>
 
-          <Sun weight="fill" size={44} color="var(--color-sun-400)" className="anim-sun mx-auto" aria-hidden />
           <h1 className="display-title text-[color:var(--color-pool-700)]" style={{ fontSize: "clamp(2.2rem, 7vw, 4rem)" }}>
             המנוי שהשמש<br />לא יכולה להתאפק עליו
           </h1>

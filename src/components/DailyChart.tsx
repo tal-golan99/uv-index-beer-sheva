@@ -108,13 +108,13 @@ export default function DailyChart({ hours }: Props) {
             </linearGradient>
           </defs>
 
-          <CartesianGrid strokeDasharray="2 6" stroke="rgba(2,132,199,0.10)" vertical={false} />
+          <CartesianGrid strokeDasharray="2 6" stroke="rgba(2,132,199,0.12)" />
           <XAxis
             dataKey="hour"
+            ticks={["06:00", "12:00", "18:00"]}
             tick={{ fill: "#5f7787", fontSize: 10 }}
             tickLine={false}
             axisLine={false}
-            interval="preserveStartEnd"
           />
           <YAxis
             domain={[0, 12]}
@@ -122,6 +122,7 @@ export default function DailyChart({ hours }: Props) {
             tick={{ fill: "#5f7787", fontSize: 10 }}
             tickLine={false}
             axisLine={false}
+            width={20}
           />
           <Tooltip
             content={<CustomTooltip />}

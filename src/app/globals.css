@@ -83,6 +83,19 @@ body.pool-time {
     linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 62%);
 }
 
+/* Pool-time overrides — UV ≥ 9, peak sun hours */
+body.pool-time .surface-band {
+  background:
+    radial-gradient(125% 100% at 50% 0%, rgba(247, 189, 36, 0.28), transparent 68%),
+    var(--color-pool-50);
+}
+/* Warm sun-gold hover glow on CTAs during peak UV — matches the festive bg */
+@media (hover: hover) and (pointer: fine) {
+  body.pool-time .cta-btn:hover {
+    box-shadow: 0 0 28px rgba(247, 189, 36, 0.40), var(--shadow-lg) !important;
+  }
+}
+
 /* Night mode — after sunset / before sunrise in Israel */
 body.night-mode {
   --bg-top:   #0c1b29;
@@ -130,6 +143,7 @@ body.night-mode .rounded-3xl.bg-white:not(button):not(a),
 body.night-mode .rounded-2xl.bg-white:not(button):not(a),
 body.night-mode .rounded-xl.bg-white:not(button):not(a) {
   background: rgba(14, 30, 44, 0.85) !important;
+  outline: 1px solid rgba(14, 147, 212, 0.12);
 }
 
 /* Sticky navigation bars — deeper glass, saturated backdrop for chromatic depth */
@@ -147,6 +161,12 @@ body.night-mode {
   --color-pool-100: rgba(14, 147, 212, 0.22);
 }
 
+/* pool-600/700 as TEXT color: needs to be light on dark bg.
+   Can't override the token globally (would break button/gradient backgrounds with white text).
+   Target the Tailwind text-utility classes directly instead. */
+body.night-mode .text-\[color\:var\(--color-pool-700\)\] { color: #85ccec !important; }
+body.night-mode .text-\[color\:var\(--color-pool-600\)\] { color: #4ab4e0 !important; }
+
 /* Section-break divider for inner pages in night mode */
 body.night-mode .night-divider {
   border-top: 1px solid rgba(14, 147, 212, 0.14);
@@ -156,6 +176,7 @@ body.night-mode .night-divider {
 body.night-mode .display-title {
   line-height: 1.1;
   letter-spacing: -0.01em;
+  text-shadow: 0 0 40px rgba(133, 204, 236, 0.18);
 }
 
 /* Night delight — CTA buttons emit a pool-water glow in the dark (thematic, not generic) */
@@ -167,7 +188,7 @@ body.night-mode .display-title {
 
 /* Night motion tuning — ambient loops breathe slower; entrances land more softly.
    Feedback animations (pressable, cta-btn) are unchanged; only decorative motion adjusts. */
-body.night-mode .uv-aura      { animation-duration: 7s; }
+body.night-mode .uv-aura      { animation-duration: 7s; width: 128%; filter: blur(18px); }
 body.night-mode .anim-sun     { animation-duration: 6s; }
 body.night-mode .anim-bob     { animation-duration: 5.5s; }
 body.night-mode .anim-blob    { animation-duration: 32s; }
