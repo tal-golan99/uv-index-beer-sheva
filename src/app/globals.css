@@ -71,6 +71,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-optical-sizing: auto;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Festive variant when UV >= 9 — warmer honey-over-water, intentional not candy */

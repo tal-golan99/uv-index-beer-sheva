@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Assistant, Suez_One } from "next/font/google";
 import "./globals.css";
 import { fetchUVForecast } from "@/lib/openmeteo";
@@ -21,6 +21,12 @@ const suez = Suez_One({
 export const metadata: Metadata = {
   title: "UV Pool · באר שבע",
   description: "מדד UV בזמן אמת ומי נמצא בבריכה עכשיו, בבאר שבע",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
