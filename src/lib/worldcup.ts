@@ -235,14 +235,12 @@ interface OddsGame {
 }
 
 async function fetchWinDrawLoss(
-  match: FDMatch,
-  from: string,
-  to: string
+  match: FDMatch
 ): Promise<{ homeWin: number; draw: number; awayWin: number } | null> {
   const key = process.env.THE_ODDS_API_KEY;
   if (!key) { console.log("[WDL] no THE_ODDS_API_KEY"); return null; }
   try {
-    const url = `${OA_BASE}/sports/soccer_fifa_world_cup_2026/odds/?apiKey=${key}&regions=eu&markets=h2h&dateFrom=${encodeURIComponent(from)}&dateTo=${encodeURIComponent(to)}`;
+    const url = `${OA_BASE}/sports/soccer_fifa_world_cup/odds/?apiKey=${key}&regions=eu&markets=h2h`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
@@ -355,10 +353,7 @@ export async function buildWCMessage(): Promise<string | null> {
         `${flag(m.homeTeam.name)} ${heH} vs ${heA} ${flag(m.awayTeam.name)}  |  ${timeStr(m.utcDate)}`
       );
 
-      // Win/draw/loss from TheOddsAPI (2h window around kickoff)
-      const matchFrom = new Date(new Date(m.utcDate).getTime() - 2 * 60 * 60 * 1000).toISOString();
-      const matchTo = new Date(new Date(m.utcDate).getTime() + 2 * 60 * 60 * 1000).toISOString();
-      const wdl = await fetchWinDrawLoss(m, matchFrom, matchTo);
+      const wdl = await fetchWinDrawLoss(m);
       if (wdl) {
         lines.push(`→ ניצחון ${heH} ${wdl.homeWin}% | תיקו ${wdl.draw}% | ניצחון ${heA} ${wdl.awayWin}%`);
       }
