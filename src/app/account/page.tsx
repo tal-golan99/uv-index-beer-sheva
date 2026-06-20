@@ -121,10 +121,17 @@ export default function AccountPage() {
   // Start Telegram setup when user clicks Connect
   async function startTelegramSetup() {
     setShowTelegramSetup(true);
-    const res = await fetch("/api/telegram/start-token", { method: "POST" });
-    const { token, botUsername } = await res.json();
-    if (token && botUsername) {
-      setTelegramLink(`https://t.me/${botUsername}?start=${token}`);
+    try {
+      const res = await fetch("/api/telegram/start-token", { method: "POST" });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const { token, botUsername } = await res.json();
+      if (token && botUsername) {
+        setTelegramLink(`https://t.me/${botUsername}?start=${token}`);
+      }
+    } catch {
+      setError("לא הצלחנו להכין את הלינק. רענן את הדף ונסה שוב.");
+      setShowTelegramSetup(false);
+      return;
     }
 
     if (pollRef.current) clearInterval(pollRef.current);
