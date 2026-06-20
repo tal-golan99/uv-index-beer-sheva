@@ -147,7 +147,7 @@ export async function fetchUVForecast(): Promise<UVForecast> {
     fetchedAt:    new Date().toISOString(),
     sunrise:      omData.sunrise,
     sunset:       omData.sunset,
-    omHoursToday: (omData.week[0]?.hours ?? []).map((h) => ({ ...h, uv_index: scale(h.uv_index) })),
+    omHoursToday: omData.week[0]?.hours ?? [],
   };
 }
 
