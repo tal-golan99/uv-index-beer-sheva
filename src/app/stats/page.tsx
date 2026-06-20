@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ChartBar, PersonSimpleSwim } from "@phosphor-icons/react/dist/ssr";
+import { ChartBar, PersonSimpleSwim } from "@phosphor-icons/react/dist/ssr";
+import BackLink from "@/components/BackLink";
 import HeaderAuth from "@/components/HeaderAuth";
 import PoolStreak from "@/components/PoolStreak";
 
@@ -64,12 +65,7 @@ export default async function StatsPage() {
     <main className="min-h-screen">
       <div className="mx-auto max-w-md space-y-6 px-4 pb-16 pt-6">
         {/* Back link */}
-        <Link
-          href="/"
-          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-[color:var(--color-ink-2)] transition-colors hover:text-[color:var(--color-pool-600)]"
-        >
-          חזרה <ArrowRight size={18} aria-hidden />
-        </Link>
+        <BackLink />
 
         {/* Title + HeaderAuth dropdown */}
         <div className="flex items-center justify-between gap-3">
