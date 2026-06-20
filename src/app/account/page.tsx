@@ -178,7 +178,9 @@ export default function AccountPage() {
             .from("avatars")
             .upload(path, avatarFile, { upsert: true });
           if (uploadError) {
-            throw new Error(`שגיאה בהעלאת התמונה: ${uploadError.message}`);
+            setError("העלאת התמונה נכשלה. נסה תמונה קטנה יותר או בפורמט JPG/PNG.");
+            setSaving(false);
+            return;
           }
           const { data } = supabase.storage.from("avatars").getPublicUrl(path);
           avatarUrl = data.publicUrl;
@@ -313,7 +315,7 @@ export default function AccountPage() {
                   onClick={disconnectTelegram}
                   className="text-xs font-semibold text-red-500 underline underline-offset-2"
                 >
-                  נתק
+                  נתק טלגרם
                 </button>
               )}
             </div>
@@ -375,7 +377,7 @@ export default function AccountPage() {
           )}
           {success && (
             <p className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700 ring-1 ring-green-200">
-              נשמר בהצלחה ✓
+              הפרופיל עודכן ✓
             </p>
           )}
 

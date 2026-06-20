@@ -106,7 +106,7 @@ export default async function StatsPage() {
 
           {/* Status card — PoolStreak already shows days-since, so only show 30-day count + last date */}
           <div className="anim-rise rounded-3xl bg-white p-5 ring-1 ring-[color:var(--color-pool-100)] shadow-pool-sm space-y-3">
-            <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">מצב נוכחי</h2>
+            <h2 className="text-sm font-extrabold text-[color:var(--color-ink)]">30 ימים אחרונים</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-[color:var(--color-ink-2)]">ביקורים ב-30 יום</span>

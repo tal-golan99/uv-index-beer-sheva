@@ -87,10 +87,10 @@ export default function OnboardingPage() {
         if (token && botUsername) {
           setTelegramLink(`https://t.me/${botUsername}?start=${token}`);
         } else {
-          setError("לא הצלחנו ליצור לינק. נסה לרענן.");
+          setError("לא הצלחנו להכין את הלינק. רענן את הדף ונסה שוב.");
         }
       })
-      .catch(() => setError("שגיאה ביצירת לינק. נסה לרענן."));
+      .catch(() => setError("לא הצלחנו להכין את הלינק. רענן את הדף ונסה שוב."));
 
     let attempts = 0;
     pollRef.current = setInterval(async () => {
