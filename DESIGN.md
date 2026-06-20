@@ -4,7 +4,15 @@ Visual system for UV Pool. Source of truth for tokens lives in [src/app/globals.
 
 ## Theme
 
-Bright, aquatic, sun-over-water. Light theme only (the app is used outdoors in daylight). Mood: a public pool at midday — honey sun, committed pool blue, water caustics. Playful but composed, not candy-chaotic.
+Bright, aquatic, sun-over-water. Three contextual states driven by time and UV — the body class is set server-side in `layout.tsx` via `BodyTheme`:
+
+| State | Trigger | `<body>` class | Mood |
+|-------|---------|----------------|------|
+| **Day** (default) | Daytime, UV < 9 | *(none)* | Midday pool — committed blue, honey pop, water caustics |
+| **Pool-time** | UV ≥ 9 | `pool-time` | Festive, peak sun — honey-gold tint over blue, CTA sun-glow |
+| **Night** | After sunset / before sunrise | `night-mode` | Deep-sky dark — star field, tinted glass surfaces, luminous blue accents |
+
+Each state overrides CSS tokens and background in `globals.css`. Never add a fourth state without updating `BodyTheme.tsx`, `layout.tsx`, and this file.
 
 ## Color
 
@@ -14,7 +22,8 @@ Strategy: **Committed** — pool blue carries the brand, honey sun is the single
 - **Sun** ramp `--color-sun-300/400/500` (`#ffd95e` → `#db9a08`). The single warm accent — verdict highlights, the "go now" energy. `sun-500` for sun-colored text/icons (the lighter sun shades fail contrast as text).
 - **Ink** `--color-ink #0c1b29` (headings/body), `--color-ink-2 #3c5161` (~7:1, labels/secondary body), `--color-ink-3 #6a8295` (~3.9:1, decorative micro-labels ≥18px ONLY — never body).
 - **UV severity** scale (green→purple) lives in [src/lib/uv.ts](src/lib/uv.ts) as `UVLevel.color` (vivid, for arcs/dots) and `UVLevel.colorText` (AA-safe, for text). This is *state*, not brand decoration — use only to encode UV danger.
-- Page background: layered radial + linear blue gradient on `<body>`; a warmer honey-over-water variant under `body.pool-time` (UV ≥ 9).
+- Page background: layered radial + linear blue gradient on `<body>`; honey-over-water under `body.pool-time`; star field + pool-ambient glows under `body.night-mode`.
+- **Night-mode token overrides** (in `globals.css` under `body.night-mode`): `--color-ink` → `#e8f4fb`, `--color-ink-2` → `#94b8cc`, `--color-ink-3` → `#7a9bb0`, `--color-pool-50/100` → tinted glass values. `pool-600/700` as heading *text* is overridden via targeted class selectors (`.text-[color:var(--color-pool-700)]`) rather than global token override — avoids breaking gradient backgrounds that depend on those tokens.
 
 ## Typography
 
@@ -37,6 +46,8 @@ Radius scale: `--radius-lg 24px` (cards), `--radius-md 16px` (nested), `--radius
 ## Motion
 
 Custom easing tokens (`--ease-out-expo/quart/spring/in-out-quint`). Entrances start from `scale(0.96)` + opacity, never `scale(0)`. Signature motion: water caustics over the pool image, the springy UV gauge needle, scroll `Reveal` (IntersectionObserver, content visible by default). Every animation has a `prefers-reduced-motion: reduce` fallback in globals.css. Ease-out only — no bounce/elastic except the one deliberate gauge overshoot.
+
+**Night-mode motion tuning**: ambient loops slow down in night mode (uv-aura 7s, blobs 32s, sun 6s, bob 5.5s); entrance animations land softer (0.65s). Feedback animations (pressable, cta-btn hover glow) are unchanged — only decorative ambient motion adjusts. All animations are GPU-only (transform/opacity/filter — never layout properties).
 
 ## Iconography
 
